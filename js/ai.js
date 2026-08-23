@@ -1,52 +1,136 @@
 "use strict";
 
+/*
+============================================================
+VIRAL — AI SCENE ANALYSIS
+V2B FRONTEND
+============================================================
+
+Video.js extracts the frames.
+
+This file:
+    1. Gets those frames
+    2. Sends them to /api/analyze
+    3. Receives the AI analysis
+    4. Displays the result
+============================================================
+*/
 
 window.ViralAI = {
 
-    /*
-    ====================================================
-    VIRAL AI SYSTEM
-    V2A — FRAME EXTRACTION
-    ====================================================
-    */
+    analyzing: false,
 
+
+    /*
+    ========================================================
+    INITIALIZE
+    ========================================================
+    */
 
     init: function () {
 
-        /*
-         * Nothing to initialize yet.
-         *
-         * Real AI connection comes in V2B.
-         */
+        console.log(
+            "🤖 VIRAL AI system ready"
+        );
+
+        const button =
+            document.getElementById(
+                "analyzeBtn"
+            );
+
+        if (!button) {
+
+            console.warn(
+                "⚠️ Analyze button not found"
+            );
+
+            return;
+
+        }
+
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                this.analyze();
+
+            }
+        );
 
     },
 
 
     /*
-    ====================================================
+    ========================================================
     ANALYZE SCENE
-    ====================================================
+    ========================================================
     */
 
     analyze: async function () {
+
+        if (this.analyzing) {
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        CHECK VIDEO SYSTEM
+        ====================================================
+        */
+
+        if (
+            !window.ViralVideo ||
+            !ViralVideo.video
+        ) {
+
+            this.showError(
+                "No video system available."
+            );
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        CHECK VIDEO
+        ====================================================
+        */
+
+        if (
+            !ViralVideo.video.src
+        ) {
+
+            this.showError(
+                "No video selected."
+            );
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        GET SELECTION
+        ====================================================
+        */
 
         const selection =
             ViralVideo.getSelection();
 
 
-        /*
-        ================================================
-        CHECK VIDEO
-        ================================================
-        */
-
         if (
-            !ViralVideo.video ||
-            !ViralVideo.video.src
+            selection.duration < 1
         ) {
 
-            ViralVideo.setStatus(
-                "⚠️ Please upload a video first."
+            this.showError(
+                "Please select a scene first."
             );
 
             return;
@@ -55,53 +139,34 @@ window.ViralAI = {
 
 
         /*
-        ================================================
-        CHECK DURATION
-        ================================================
-        */
-
-        if (
-            selection.duration < 30 ||
-            selection.duration > 45
-        ) {
-
-            ViralVideo.setStatus(
-                "⚠️ Please select between 30 and 45 seconds."
-            );
-
-            return;
-
-        }
-
-
-        /*
-        ================================================
+        ====================================================
         START
-        ================================================
+        ====================================================
         */
 
-        ViralVideo.setStatus(
-            "🤖 Preparing scene..."
+        this.analyzing = true;
+
+        this.setButtonState(
+            true
+        );
+
+
+        this.setStatus(
+            "🎞️ Preparing scene frames..."
         );
 
 
         try {
 
             /*
-            ============================================
+            ================================================
             EXTRACT FRAMES
-            ============================================
+            ================================================
             */
 
             const frames =
                 await ViralVideo.extractFrames();
 
-
-            /*
-            ============================================
-            CHECK RESULT
-            ============================================
-            */
 
             if (
                 !frames ||
@@ -115,39 +180,110 @@ window.ViralAI = {
             }
 
 
-            /*
-            ============================================
-            SHOW RESULTS
-            ============================================
-            */
+            console.log(
+                "🖼️ Frames extracted:",
+                frames.length
+            );
 
-            this.showFrameResults(
-                frames
+
+            this.setStatus(
+                "🤖 Sending "
+                + frames.length
+                + " frames to AI..."
             );
 
 
             /*
-            ============================================
-            FUTURE AI STEP
-            ============================================
-
-            Later:
-
-                frames
-                    ↓
-                Backend
-                    ↓
-                Vision AI
-                    ↓
-                Scene analysis
-            ============================================
+            ================================================
+            SEND TO BACKEND
+            ================================================
             */
 
+            const response =
+                await fetch(
+                    "/api/analyze",
+                    {
 
-            ViralVideo.setStatus(
-                "✅ "
-                + frames.length
-                + " scene frames ready for AI."
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                frames:
+                                    frames
+
+                            })
+
+                    }
+                );
+
+
+            /*
+            ================================================
+            READ RESPONSE
+            ================================================
+            */
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "🤖 AI response:",
+                data
+            );
+
+
+            /*
+            ================================================
+            SERVER ERROR
+            ================================================
+            */
+
+            if (!response.ok) {
+
+                throw new Error(
+
+                    data.error ||
+                    "AI analysis failed."
+
+                );
+
+            }
+
+
+            if (
+                !data.success ||
+                !data.analysis
+            ) {
+
+                throw new Error(
+                    "AI returned no analysis."
+                );
+
+            }
+
+
+            /*
+            ================================================
+            DISPLAY
+            ================================================
+            */
+
+            this.displayAnalysis(
+                data.analysis
+            );
+
+
+            this.setStatus(
+                "✅ Scene analysis complete."
             );
 
 
@@ -156,13 +292,25 @@ window.ViralAI = {
         catch (error) {
 
             console.error(
-                "VIRAL frame extraction error:",
+                "❌ VIRAL AI error:",
                 error
             );
 
 
-            ViralVideo.setStatus(
-                "❌ Could not extract scene frames."
+            this.showError(
+                error.message ||
+                "AI analysis failed."
+            );
+
+        }
+
+        finally {
+
+            this.analyzing =
+                false;
+
+            this.setButtonState(
+                false
             );
 
         }
@@ -171,333 +319,366 @@ window.ViralAI = {
 
 
     /*
-    ====================================================
-    SHOW FRAME RESULTS
-    ====================================================
+    ========================================================
+    DISPLAY ANALYSIS
+    ========================================================
     */
 
-    showFrameResults: function (
-        frames
+    displayAnalysis: function (
+        analysis
     ) {
 
-        const empty =
+        console.log(
+            "📋 Scene analysis:",
+            analysis
+        );
+
+
+        /*
+        ====================================================
+        CHARACTERS
+        ====================================================
+        */
+
+        const characters =
             document.getElementById(
-                "analysisEmpty"
+                "aiCharacters"
             );
 
+
+        if (characters) {
+
+            characters.textContent =
+                this.formatArray(
+                    analysis.characters
+                );
+
+        }
+
+
+        /*
+        ====================================================
+        WHAT IS HAPPENING?
+        ====================================================
+        */
+
+        const happening =
+            document.getElementById(
+                "aiHappening"
+            );
+
+
+        if (happening) {
+
+            happening.textContent =
+                this.formatActions(
+                    analysis.actions
+                );
+
+        }
+
+
+        /*
+        ====================================================
+        SETTING
+        ====================================================
+        */
+
+        const setting =
+            document.getElementById(
+                "aiSetting"
+            );
+
+
+        if (setting) {
+
+            setting.textContent =
+                analysis.setting ||
+                "Not identified.";
+
+        }
+
+
+        /*
+        ====================================================
+        OBJECTS
+        ====================================================
+        */
+
+        const objects =
+            document.getElementById(
+                "aiObjects"
+            );
+
+
+        if (objects) {
+
+            objects.textContent =
+                this.formatArray(
+                    analysis.objects
+                );
+
+        }
+
+
+        /*
+        ====================================================
+        EMOTIONS
+        ====================================================
+        */
+
+        const emotions =
+            document.getElementById(
+                "aiEmotions"
+            );
+
+
+        if (emotions) {
+
+            emotions.textContent =
+                this.formatArray(
+                    analysis.emotions
+                );
+
+        }
+
+
+        /*
+        ====================================================
+        EVENTS
+        ====================================================
+        */
+
+        const events =
+            document.getElementById(
+                "aiEvents"
+            );
+
+
+        if (events) {
+
+            events.textContent =
+                this.formatArray(
+                    analysis.events
+                );
+
+        }
+
+
+        /*
+        ====================================================
+        STORY OPPORTUNITY
+        ====================================================
+        */
+
+        const story =
+            document.getElementById(
+                "aiStory"
+            );
+
+
+        if (story) {
+
+            story.textContent =
+                analysis.story_opportunity ||
+                "No story opportunity identified.";
+
+        }
+
+
+        /*
+        ====================================================
+        SHOW RESULT PANEL
+        ====================================================
+        */
 
         const result =
             document.getElementById(
-                "analysisResult"
+                "aiResult"
             );
 
 
-        /*
-        Hide empty state.
-        */
+        if (result) {
 
-        empty.classList.add(
-            "hidden"
-        );
+            result.style.display =
+                "block";
 
-
-        /*
-        Show analysis section.
-        */
-
-        result.classList.remove(
-            "hidden"
-        );
-
-
-        /*
-        ================================================
-        BASIC V2A INFORMATION
-        ================================================
-        */
-
-        document.getElementById(
-            "characters"
-        ).textContent =
-            "Waiting for Vision AI...";
-
-
-        document.getElementById(
-            "sceneDescription"
-        ).textContent =
-            frames.length
-            + " representative frames have been extracted from the selected scene.";
-
-
-        document.getElementById(
-            "storyInterpretation"
-        ).textContent =
-            "These frames will be sent to the AI in the next VIRAL version so it can understand the scene and create an Amharic story."
-
-
-        /*
-        ================================================
-        DISPLAY FRAMES
-        ================================================
-        */
-
-        this.displayFrames(
-            frames
-        );
+        }
 
     },
 
 
     /*
-    ====================================================
-    DISPLAY FRAME GALLERY
-    ====================================================
+    ========================================================
+    FORMAT ARRAY
+    ========================================================
     */
 
-    displayFrames: function (
-        frames
+    formatArray: function (
+        value
     ) {
 
-        /*
-        Find existing gallery.
-        */
+        if (
+            !Array.isArray(value) ||
+            value.length === 0
+        ) {
 
-        let gallery =
-            document.getElementById(
-                "viralFrameGallery"
-            );
-
-
-        /*
-        Create gallery if it doesn't exist.
-        */
-
-        if (!gallery) {
-
-            gallery =
-                document.createElement(
-                    "div"
-                );
-
-
-            gallery.id =
-                "viralFrameGallery";
-
-
-            /*
-            Add heading.
-            */
-
-            const heading =
-                document.createElement(
-                    "div"
-                );
-
-
-            heading.textContent =
-                "🎞️ Extracted Scene Frames";
-
-
-            heading.style.margin =
-                "20px 0 10px";
-
-
-            heading.style.fontWeight =
-                "800";
-
-
-            /*
-            Add gallery container.
-            */
-
-            gallery.style.display =
-                "grid";
-
-
-            gallery.style.gridTemplateColumns =
-                "repeat(2, 1fr)";
-
-
-            gallery.style.gap =
-                "8px";
-
-
-            /*
-            Insert after analysis result.
-            */
-
-            const result =
-                document.getElementById(
-                    "analysisResult"
-                );
-
-
-            result.appendChild(
-                heading
-            );
-
-
-            result.appendChild(
-                gallery
-            );
+            return "None identified.";
 
         }
 
 
-        /*
-        Clear old frames.
-        */
-
-        gallery.innerHTML =
-            "";
-
-
-        /*
-        ================================================
-        CREATE FRAME CARDS
-        ================================================
-        */
-
-        frames.forEach(
-            (frame, index) => {
-
-                const card =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                card.style.background =
-                    "#171c26";
-
-
-                card.style.border =
-                    "1px solid #252c38";
-
-
-                card.style.borderRadius =
-                    "10px";
-
-
-                card.style.overflow =
-                    "hidden";
-
-
-                /*
-                Image
-                */
-
-                const image =
-                    document.createElement(
-                        "img"
-                    );
-
-
-                image.src =
-                    frame.image;
-
-
-                image.alt =
-                    "Scene frame "
-                    + (index + 1);
-
-
-                image.style.width =
-                    "100%";
-
-
-                image.style.display =
-                    "block";
-
-
-                /*
-                Timestamp
-                */
-
-                const time =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                time.textContent =
-                    "Frame "
-                    + (index + 1)
-                    + " • "
-                    + this.formatTime(
-                        frame.time
-                    );
-
-
-                time.style.padding =
-                    "7px";
-
-
-                time.style.fontSize =
-                    "11px";
-
-
-                time.style.color =
-                    "#9da5b5";
-
-
-                /*
-                Add to card.
-                */
-
-                card.appendChild(
-                    image
-                );
-
-
-                card.appendChild(
-                    time
-                );
-
-
-                gallery.appendChild(
-                    card
-                );
-
-            }
+        return value.join(
+            ", "
         );
 
     },
 
 
     /*
-    ====================================================
-    FORMAT TIME
-    ====================================================
+    ========================================================
+    FORMAT ACTIONS
+    ========================================================
     */
 
-    formatTime: function (
-        seconds
+    formatActions: function (
+        value
     ) {
 
-        const minutes =
-            Math.floor(
-                seconds / 60
+        if (
+            !Array.isArray(value) ||
+            value.length === 0
+        ) {
+
+            return "No important actions identified.";
+
+        }
+
+
+        return value.join(
+            " "
+        );
+
+    },
+
+
+    /*
+    ========================================================
+    BUTTON STATE
+    ========================================================
+    */
+
+    setButtonState: function (
+        busy
+    ) {
+
+        const button =
+            document.getElementById(
+                "analyzeBtn"
             );
 
 
-        const secs =
-            Math.floor(
-                seconds % 60
+        if (!button) {
+
+            return;
+
+        }
+
+
+        button.disabled =
+            busy;
+
+
+        if (busy) {
+
+            button.dataset.originalText =
+                button.textContent;
+
+            button.textContent =
+                "🤖 Analyzing...";
+
+        }
+
+        else {
+
+            button.textContent =
+                button.dataset.originalText ||
+                "Analyze Scene";
+
+        }
+
+    },
+
+
+    /*
+    ========================================================
+    STATUS
+    ========================================================
+    */
+
+    setStatus: function (
+        message
+    ) {
+
+        if (
+            window.ViralVideo &&
+            typeof ViralVideo.setStatus ===
+                "function"
+        ) {
+
+            ViralVideo.setStatus(
+                message
             );
 
+        }
 
-        return (
-            minutes
-            + ":"
-            + String(
-                secs
-            ).padStart(
-                2,
-                "0"
-            )
+        else {
+
+            console.log(
+                message
+            );
+
+        }
+
+    },
+
+
+    /*
+    ========================================================
+    ERROR
+    ========================================================
+    */
+
+    showError: function (
+        message
+    ) {
+
+        console.error(
+            "❌",
+            message
+        );
+
+
+        this.setStatus(
+            "❌ " + message
         );
 
     }
 
 };
+
+
+/*
+============================================================
+START AI SYSTEM
+============================================================
+*/
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        ViralAI.init();
+
+    }
+);
