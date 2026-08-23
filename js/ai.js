@@ -3,16 +3,8 @@
 /*
 ============================================================
 VIRAL — AI SCENE ANALYSIS
-V2B FRONTEND
-============================================================
-
-Video.js extracts the frames.
-
-This file:
-    1. Gets those frames
-    2. Sends them to /api/analyze
-    3. Receives the AI analysis
-    4. Displays the result
+V2B
+REAL VISION AI CONNECTION
 ============================================================
 */
 
@@ -30,7 +22,7 @@ window.ViralAI = {
     init: function () {
 
         console.log(
-            "🤖 VIRAL AI system ready"
+            "🤖 VIRAL AI V2B LOADED"
         );
 
         const button =
@@ -41,7 +33,7 @@ window.ViralAI = {
         if (!button) {
 
             console.warn(
-                "⚠️ Analyze button not found"
+                "⚠️ analyzeBtn not found"
             );
 
             return;
@@ -53,6 +45,10 @@ window.ViralAI = {
             "click",
             () => {
 
+                console.log(
+                    "🔥 ANALYZE BUTTON CLICKED"
+                );
+
                 this.analyze();
 
             }
@@ -63,7 +59,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    ANALYZE SCENE
+    ANALYZE
     ========================================================
     */
 
@@ -76,93 +72,81 @@ window.ViralAI = {
         }
 
 
-        /*
-        ====================================================
-        CHECK VIDEO SYSTEM
-        ====================================================
-        */
-
-        if (
-            !window.ViralVideo ||
-            !ViralVideo.video
-        ) {
-
-            this.showError(
-                "No video system available."
-            );
-
-            return;
-
-        }
-
-
-        /*
-        ====================================================
-        CHECK VIDEO
-        ====================================================
-        */
-
-        if (
-            !ViralVideo.video.src
-        ) {
-
-            this.showError(
-                "No video selected."
-            );
-
-            return;
-
-        }
-
-
-        /*
-        ====================================================
-        GET SELECTION
-        ====================================================
-        */
-
-        const selection =
-            ViralVideo.getSelection();
-
-
-        if (
-            selection.duration < 1
-        ) {
-
-            this.showError(
-                "Please select a scene first."
-            );
-
-            return;
-
-        }
-
-
-        /*
-        ====================================================
-        START
-        ====================================================
-        */
-
         this.analyzing = true;
+
 
         this.setButtonState(
             true
         );
 
 
-        this.setStatus(
-            "🎞️ Preparing scene frames..."
-        );
-
-
         try {
 
             /*
-            ================================================
-            EXTRACT FRAMES
-            ================================================
+            =================================================
+            CHECK VIDEO SYSTEM
+            =================================================
             */
+
+            if (
+                !window.ViralVideo
+            ) {
+
+                throw new Error(
+                    "ViralVideo is not available."
+                );
+
+            }
+
+
+            if (
+                !ViralVideo.video
+            ) {
+
+                throw new Error(
+                    "No video is loaded."
+                );
+
+            }
+
+
+            /*
+            =================================================
+            GET SELECTION
+            =================================================
+            */
+
+            const selection =
+                ViralVideo.getSelection();
+
+
+            console.log(
+                "🎬 Selected scene:",
+                selection
+            );
+
+
+            if (
+                selection.duration <= 0
+            ) {
+
+                throw new Error(
+                    "Please select a video scene first."
+                );
+
+            }
+
+
+            /*
+            =================================================
+            EXTRACT FRAMES
+            =================================================
+            */
+
+            this.setStatus(
+                "🎞️ Extracting scene frames..."
+            );
+
 
             const frames =
                 await ViralVideo.extractFrames();
@@ -181,22 +165,34 @@ window.ViralAI = {
 
 
             console.log(
-                "🖼️ Frames extracted:",
+                "🖼️ FRAMES READY:",
                 frames.length
             );
 
 
+            /*
+            =================================================
+            IMPORTANT:
+            WE ARE NOW ACTUALLY CALLING THE API
+            =================================================
+            */
+
             this.setStatus(
                 "🤖 Sending "
                 + frames.length
-                + " frames to AI..."
+                + " frames to Vision AI..."
+            );
+
+
+            console.log(
+                "🚀 POST /api/analyze STARTING..."
             );
 
 
             /*
-            ================================================
-            SEND TO BACKEND
-            ================================================
+            =================================================
+            API REQUEST
+            =================================================
             */
 
             const response =
@@ -204,7 +200,8 @@ window.ViralAI = {
                     "/api/analyze",
                     {
 
-                        method: "POST",
+                        method:
+                            "POST",
 
                         headers: {
 
@@ -225,10 +222,16 @@ window.ViralAI = {
                 );
 
 
+            console.log(
+                "📡 API STATUS:",
+                response.status
+            );
+
+
             /*
-            ================================================
+            =================================================
             READ RESPONSE
-            ================================================
+            =================================================
             */
 
             const data =
@@ -236,15 +239,15 @@ window.ViralAI = {
 
 
             console.log(
-                "🤖 AI response:",
+                "🤖 API RESPONSE:",
                 data
             );
 
 
             /*
-            ================================================
-            SERVER ERROR
-            ================================================
+            =================================================
+            HANDLE ERROR
+            =================================================
             */
 
             if (!response.ok) {
@@ -252,7 +255,10 @@ window.ViralAI = {
                 throw new Error(
 
                     data.error ||
-                    "AI analysis failed."
+                    (
+                        "API request failed. HTTP "
+                        + response.status
+                    )
 
                 );
 
@@ -260,7 +266,18 @@ window.ViralAI = {
 
 
             if (
-                !data.success ||
+                !data.success
+            ) {
+
+                throw new Error(
+                    data.error ||
+                    "AI analysis failed."
+                );
+
+            }
+
+
+            if (
                 !data.analysis
             ) {
 
@@ -272,9 +289,9 @@ window.ViralAI = {
 
 
             /*
-            ================================================
-            DISPLAY
-            ================================================
+            =================================================
+            DISPLAY REAL RESULT
+            =================================================
             */
 
             this.displayAnalysis(
@@ -283,26 +300,33 @@ window.ViralAI = {
 
 
             this.setStatus(
-                "✅ Scene analysis complete."
+                "✅ Vision AI analysis complete."
             );
 
 
+            console.log(
+                "🎉 VIRAL V2B COMPLETE:",
+                data.analysis
+            );
+
         }
+
 
         catch (error) {
 
             console.error(
-                "❌ VIRAL AI error:",
+                "❌ VIRAL AI ERROR:",
                 error
             );
 
 
-            this.showError(
-                error.message ||
-                "AI analysis failed."
+            this.setStatus(
+                "❌ "
+                + error.message
             );
 
         }
+
 
         finally {
 
@@ -329,7 +353,7 @@ window.ViralAI = {
     ) {
 
         console.log(
-            "📋 Scene analysis:",
+            "📋 DISPLAYING AI ANALYSIS",
             analysis
         );
 
@@ -358,7 +382,7 @@ window.ViralAI = {
 
         /*
         ====================================================
-        WHAT IS HAPPENING?
+        WHAT IS HAPPENING
         ====================================================
         */
 
@@ -488,7 +512,7 @@ window.ViralAI = {
 
         /*
         ====================================================
-        SHOW RESULT PANEL
+        SHOW RESULT
         ====================================================
         */
 
@@ -510,7 +534,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    FORMAT ARRAY
+    ARRAY FORMATTER
     ========================================================
     */
 
@@ -537,7 +561,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    FORMAT ACTIONS
+    ACTION FORMATTER
     ========================================================
     */
 
@@ -564,7 +588,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    BUTTON STATE
+    BUTTON
     ========================================================
     */
 
@@ -595,7 +619,7 @@ window.ViralAI = {
                 button.textContent;
 
             button.textContent =
-                "🤖 Analyzing...";
+                "🤖 Sending to AI...";
 
         }
 
@@ -620,6 +644,11 @@ window.ViralAI = {
         message
     ) {
 
+        console.log(
+            message
+        );
+
+
         if (
             window.ViralVideo &&
             typeof ViralVideo.setStatus ===
@@ -632,37 +661,6 @@ window.ViralAI = {
 
         }
 
-        else {
-
-            console.log(
-                message
-            );
-
-        }
-
-    },
-
-
-    /*
-    ========================================================
-    ERROR
-    ========================================================
-    */
-
-    showError: function (
-        message
-    ) {
-
-        console.error(
-            "❌",
-            message
-        );
-
-
-        this.setStatus(
-            "❌ " + message
-        );
-
     }
 
 };
@@ -670,13 +668,13 @@ window.ViralAI = {
 
 /*
 ============================================================
-START AI SYSTEM
+START
 ============================================================
 */
 
 document.addEventListener(
     "DOMContentLoaded",
-    () => {
+    function () {
 
         ViralAI.init();
 
