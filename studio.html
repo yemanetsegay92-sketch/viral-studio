@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>VIRAL Studio</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="brand">
+        <span>🎬</span>
+        VIRAL
+    </div>
+
+    <div class="tagline">
+        AI Amharic Short Studio
+    </div>
+
+</header>
+
+
+
+<main class="studio">
+
+
+    <!-- =========================
+         VIDEO SECTION
+    ========================== -->
+
+    <section class="panel video-panel">
+
+
+        <div class="panel-title">
+
+            <div>
+
+                <div class="eyebrow">
+                    STEP 01
+                </div>
+
+                <h2>
+                    Select your scene
+                </h2>
+
+            </div>
+
+
+            <button
+                id="changeVideo"
+                class="small-btn"
+            >
+                Change video
+            </button>
+
+        </div>
+
+
+
+        <div class="video-wrap">
+
+    <video
+        id="videoPreview"
+        controls
+        playsinline
+    ></video>
+
+
+    <div
+        id="videoEmpty"
+        class="video-empty"
+    >
+
+        <div style="font-size:40px;">
+            🎥
+        </div>
+
+        <div>
+            Choose a video to begin
+        </div>
+
+        <button
+            id="uploadVideoInside"
+            class="small-btn"
+            style="margin-top:12px;"
+        >
+            Upload Video
+        </button>
+
+    </div>
+
+</div>
+
+
+
+        <!-- TRIM -->
+
+        <div class="trim-grid">
+
+
+            <label>
+
+                <span>
+                    Start
+
+                    <strong id="startValue">
+                        0:00
+                    </strong>
+                </span>
+
+                <input
+                    id="startRange"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value="0"
+                >
+
+            </label>
+
+
+
+            <label>
+
+                <span>
+                    End
+
+                    <strong id="endValue">
+                        0:30
+                    </strong>
+                </span>
+
+                <input
+                    id="endRange"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value="30"
+                >
+
+            </label>
+
+
+        </div>
+
+
+
+        <!-- DURATION -->
+
+        <div class="duration-card">
+
+            <span>
+                Selected duration
+            </span>
+
+            <strong id="durationValue">
+                30.0 sec
+            </strong>
+
+            <small>
+                Recommended: 30–45 seconds
+            </small>
+
+        </div>
+
+
+
+        <button
+            id="analyzeBtn"
+            class="primary-btn"
+        >
+            🤖 Analyze Scene
+        </button>
+
+
+        <div
+            id="status"
+            class="status"
+        ></div>
+
+
+    </section>
+
+
+
+    <!-- =========================
+         AI ANALYSIS
+    ========================== -->
+
+    <section class="panel analysis-panel">
+
+        <div class="eyebrow">
+            STEP 02
+        </div>
+
+        <h2>
+            AI Scene Analysis
+        </h2>
+
+
+
+        <div
+            id="analysisEmpty"
+            class="empty-state"
+        >
+
+            <div>
+                ✨
+            </div>
+
+            <p>
+                Your scene analysis will appear here.
+            </p>
+
+        </div>
+
+
+
+        <div
+            id="analysisResult"
+            class="analysis-result hidden"
+        >
+
+
+            <div class="result-card">
+
+                <label>
+                    Characters
+                </label>
+
+                <p id="characters">
+                    —
+                </p>
+
+            </div>
+
+
+
+            <div class="result-card">
+
+                <label>
+                    What is happening?
+                </label>
+
+                <p id="sceneDescription">
+                    —
+                </p>
+
+            </div>
+
+
+
+            <div class="result-card">
+
+                <label>
+                    Story interpretation
+                </label>
+
+                <p id="storyInterpretation">
+                    —
+                </p>
+
+            </div>
+
+
+
+            <button
+                id="narrationBtn"
+                class="secondary-btn"
+            >
+                🇪🇹 Generate Amharic Story
+            </button>
+
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+
+<!-- Hidden video picker -->
+
+<input
+    id="hiddenVideoInput"
+    type="file"
+    accept="video/*"
+    hidden
+>
+
+
+
+<!-- JavaScript -->
+
+<script src="js/video.js"></script>
+
+<script src="js/ai.js"></script>
+
+<script src="js/subtitles.js"></script>
+
+
+<script>
+
+window.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        ViralVideo.init();
+
+        ViralAI.init();
+
+    }
+);
+
+</script>
+
+
+</body>
+
+</html> 
