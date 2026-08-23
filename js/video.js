@@ -277,29 +277,6 @@ window.ViralVideo = {
         );
 
 
-        /*
-        =================================================
-        ANALYZE BUTTON
-        =================================================
-        */
-
-        const analyzeButton =
-            document.getElementById(
-                "analyzeBtn"
-            );
-
-        if (analyzeButton) {
-
-            analyzeButton.addEventListener(
-                "click",
-                () => {
-
-                    ViralAI.analyze();
-
-                }
-            );
-
-        }
 
 
         console.log(
