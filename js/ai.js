@@ -3,7 +3,7 @@
 /*
 ============================================================
 VIRAL — AI SCENE ANALYSIS
-V2B
+V2C
 REAL VISION AI CONNECTION
 ============================================================
 */
@@ -11,6 +11,7 @@ REAL VISION AI CONNECTION
 window.ViralAI = {
 
     analyzing: false,
+    initialized: false,
 
 
     /*
@@ -21,14 +22,33 @@ window.ViralAI = {
 
     init: function () {
 
+        /*
+        Prevent duplicate initialization
+        */
+
+        if (this.initialized) {
+
+            console.log(
+                "🤖 VIRAL AI already initialized"
+            );
+
+            return;
+
+        }
+
+        this.initialized = true;
+
+
         console.log(
-            "🤖 VIRAL AI V2B LOADED"
+            "🤖 VIRAL AI V2C LOADED"
         );
+
 
         const button =
             document.getElementById(
                 "analyzeBtn"
             );
+
 
         if (!button) {
 
@@ -59,7 +79,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    ANALYZE
+    ANALYZE SCENE
     ========================================================
     */
 
@@ -127,6 +147,7 @@ window.ViralAI = {
 
 
             if (
+                !selection ||
                 selection.duration <= 0
             ) {
 
@@ -172,8 +193,7 @@ window.ViralAI = {
 
             /*
             =================================================
-            IMPORTANT:
-            WE ARE NOW ACTUALLY CALLING THE API
+            SEND TO VISION AI
             =================================================
             */
 
@@ -188,12 +208,6 @@ window.ViralAI = {
                 "🚀 POST /api/analyze STARTING..."
             );
 
-
-            /*
-            =================================================
-            API REQUEST
-            =================================================
-            */
 
             const response =
                 await fetch(
@@ -246,7 +260,7 @@ window.ViralAI = {
 
             /*
             =================================================
-            HANDLE ERROR
+            SERVER ERROR
             =================================================
             */
 
@@ -290,7 +304,7 @@ window.ViralAI = {
 
             /*
             =================================================
-            DISPLAY REAL RESULT
+            DISPLAY
             =================================================
             */
 
@@ -305,7 +319,7 @@ window.ViralAI = {
 
 
             console.log(
-                "🎉 VIRAL V2B COMPLETE:",
+                "🎉 VIRAL V2C COMPLETE:",
                 data.analysis
             );
 
@@ -321,8 +335,8 @@ window.ViralAI = {
 
 
             this.setStatus(
-                "❌ "
-                + error.message
+                "❌ " +
+                error.message
             );
 
         }
@@ -353,7 +367,7 @@ window.ViralAI = {
     ) {
 
         console.log(
-            "📋 DISPLAYING AI ANALYSIS",
+            "📋 DISPLAYING ANALYSIS:",
             analysis
         );
 
@@ -366,7 +380,7 @@ window.ViralAI = {
 
         const characters =
             document.getElementById(
-                "aiCharacters"
+                "characters"
             );
 
 
@@ -382,19 +396,19 @@ window.ViralAI = {
 
         /*
         ====================================================
-        WHAT IS HAPPENING
+        WHAT IS HAPPENING?
         ====================================================
         */
 
-        const happening =
+        const description =
             document.getElementById(
-                "aiHappening"
+                "sceneDescription"
             );
 
 
-        if (happening) {
+        if (description) {
 
-            happening.textContent =
+            description.textContent =
                 this.formatActions(
                     analysis.actions
                 );
@@ -404,100 +418,13 @@ window.ViralAI = {
 
         /*
         ====================================================
-        SETTING
-        ====================================================
-        */
-
-        const setting =
-            document.getElementById(
-                "aiSetting"
-            );
-
-
-        if (setting) {
-
-            setting.textContent =
-                analysis.setting ||
-                "Not identified.";
-
-        }
-
-
-        /*
-        ====================================================
-        OBJECTS
-        ====================================================
-        */
-
-        const objects =
-            document.getElementById(
-                "aiObjects"
-            );
-
-
-        if (objects) {
-
-            objects.textContent =
-                this.formatArray(
-                    analysis.objects
-                );
-
-        }
-
-
-        /*
-        ====================================================
-        EMOTIONS
-        ====================================================
-        */
-
-        const emotions =
-            document.getElementById(
-                "aiEmotions"
-            );
-
-
-        if (emotions) {
-
-            emotions.textContent =
-                this.formatArray(
-                    analysis.emotions
-                );
-
-        }
-
-
-        /*
-        ====================================================
-        EVENTS
-        ====================================================
-        */
-
-        const events =
-            document.getElementById(
-                "aiEvents"
-            );
-
-
-        if (events) {
-
-            events.textContent =
-                this.formatArray(
-                    analysis.events
-                );
-
-        }
-
-
-        /*
-        ====================================================
-        STORY OPPORTUNITY
+        STORY INTERPRETATION
         ====================================================
         */
 
         const story =
             document.getElementById(
-                "aiStory"
+                "storyInterpretation"
             );
 
 
@@ -505,7 +432,8 @@ window.ViralAI = {
 
             story.textContent =
                 analysis.story_opportunity ||
-                "No story opportunity identified.";
+                analysis.setting ||
+                "No story interpretation available.";
 
         }
 
@@ -518,14 +446,29 @@ window.ViralAI = {
 
         const result =
             document.getElementById(
-                "aiResult"
+                "analysisResult"
+            );
+
+
+        const empty =
+            document.getElementById(
+                "analysisEmpty"
             );
 
 
         if (result) {
 
-            result.style.display =
-                "block";
+            result.classList.remove(
+                "hidden"
+            );
+
+        }
+
+
+        if (empty) {
+
+            empty.style.display =
+                "none";
 
         }
 
@@ -534,7 +477,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    ARRAY FORMATTER
+    FORMAT ARRAY
     ========================================================
     */
 
@@ -561,7 +504,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    ACTION FORMATTER
+    FORMAT ACTIONS
     ========================================================
     */
 
@@ -588,7 +531,7 @@ window.ViralAI = {
 
     /*
     ========================================================
-    BUTTON
+    BUTTON STATE
     ========================================================
     */
 
@@ -619,7 +562,7 @@ window.ViralAI = {
                 button.textContent;
 
             button.textContent =
-                "🤖 Sending to AI...";
+                "🤖 Analyzing...";
 
         }
 
@@ -627,7 +570,7 @@ window.ViralAI = {
 
             button.textContent =
                 button.dataset.originalText ||
-                "Analyze Scene";
+                "🤖 Analyze Scene";
 
         }
 
@@ -668,7 +611,7 @@ window.ViralAI = {
 
 /*
 ============================================================
-START
+START AI SYSTEM
 ============================================================
 */
 
