@@ -4,14 +4,17 @@
 ============================================================
 VIRAL — VOICE STUDIO
 STEP 04
+============================================================
 
 Supports:
 
 1. Upload narration
-2. Record narration in browser
-3. AI voice interface
+2. Record narration
+3. AI voice placeholder
+4. Approve voice
+5. Continue to subtitles
 
-AI provider is intentionally not connected yet.
+No paid AI voice API yet.
 ============================================================
 */
 
@@ -41,166 +44,178 @@ window.ViralVoice = {
     init: function () {
 
         if (this.initialized) {
-
             return;
-
         }
 
         this.initialized = true;
 
-
         console.log(
-            "🔊 VIRAL Voice Studio ready"
+            "🔊 VIRAL VOICE STUDIO READY"
         );
 
-
-        this.setupSourceSelector();
-
-        this.setupUpload();
-
-        this.setupRecorder();
-
-        this.setupAI();
-
-        this.setupApproval();
+        this.setupEvents();
 
     },
 
 
     /*
     ========================================================
-    VOICE SOURCE
+    EVENT DELEGATION
     ========================================================
     */
 
-    setupSourceSelector: function () {
+    setupEvents: function () {
 
-        const radios =
-            document.querySelectorAll(
-                'input[name="voiceSource"]'
-            );
+        document.addEventListener(
+            "click",
+            event => {
 
+                /*
+                --------------------------------------------
+                CHOOSE FILE
+                --------------------------------------------
+                */
 
-        radios.forEach(
-            radio => {
+                if (
+                    event.target.closest(
+                        "#chooseVoiceBtn"
+                    )
+                ) {
 
-                radio.addEventListener(
-                    "change",
-                    () => {
+                    event.preventDefault();
 
-                        this.changeSource(
-                            radio.value
+                    console.log(
+                        "📁 CHOOSE VOICE FILE CLICKED"
+                    );
+
+                    const input =
+                        document.getElementById(
+                            "voiceFileInput"
+                        );
+
+                    if (input) {
+
+                        input.click();
+
+                    }
+                    else {
+
+                        console.error(
+                            "❌ voiceFileInput not found"
                         );
 
                     }
-                );
 
-            }
-        );
+                    return;
 
-    },
+                }
 
 
-    changeSource: function (
-        source
-    ) {
+                /*
+                --------------------------------------------
+                RECORD
+                --------------------------------------------
+                */
 
-        const uploadPanel =
-            document.getElementById(
-                "uploadVoicePanel"
-            );
+                if (
+                    event.target.closest(
+                        "#recordVoiceBtn"
+                    )
+                ) {
 
+                    event.preventDefault();
 
-        const aiPanel =
-            document.getElementById(
-                "aiVoicePanel"
-            );
+                    console.log(
+                        "🎙️ RECORD BUTTON CLICKED"
+                    );
 
+                    if (
+                        this.mediaRecorder &&
+                        this.mediaRecorder.state ===
+                            "recording"
+                    ) {
 
-        if (source === "upload") {
+                        this.stopRecording();
 
-            if (uploadPanel) {
+                    }
+                    else {
 
-                uploadPanel.style.display =
-                    "block";
+                        this.startRecording();
 
-            }
+                    }
 
+                    return;
 
-            if (aiPanel) {
-
-                aiPanel.style.display =
-                    "none";
-
-            }
-
-        }
-
-
-        if (source === "ai") {
-
-            if (uploadPanel) {
-
-                uploadPanel.style.display =
-                    "none";
-
-            }
+                }
 
 
-            if (aiPanel) {
+                /*
+                --------------------------------------------
+                AI VOICE
+                --------------------------------------------
+                */
 
-                aiPanel.style.display =
-                    "block";
+                if (
+                    event.target.closest(
+                        "#generateAIVoiceBtn"
+                    )
+                ) {
 
-            }
+                    event.preventDefault();
 
-        }
+                    this.generateAIVoice();
 
-    },
+                    return;
 
-
-    /*
-    ========================================================
-    UPLOAD AUDIO
-    ========================================================
-    */
-
-    setupUpload: function () {
-
-        const button =
-            document.getElementById(
-                "chooseVoiceBtn"
-            );
+                }
 
 
-        const input =
-            document.getElementById(
-                "voiceFileInput"
-            );
+                /*
+                --------------------------------------------
+                APPROVE
+                --------------------------------------------
+                */
 
+                if (
+                    event.target.closest(
+                        "#approveVoiceBtn"
+                    )
+                ) {
 
-        if (!button || !input) {
+                    event.preventDefault();
 
-            return;
+                    this.approveVoice();
 
-        }
+                    return;
 
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                input.click();
+                }
 
             }
         );
 
 
-        input.addEventListener(
+        /*
+        ====================================================
+        FILE INPUT
+        ====================================================
+        */
+
+        document.addEventListener(
             "change",
             event => {
 
+                if (
+                    event.target.id !==
+                    "voiceFileInput"
+                ) {
+
+                    return;
+
+                }
+
+
                 const file =
+                    event.target.files &&
                     event.target.files[0];
 
 
@@ -209,6 +224,12 @@ window.ViralVoice = {
                     return;
 
                 }
+
+
+                console.log(
+                    "🎵 AUDIO FILE SELECTED:",
+                    file.name
+                );
 
 
                 this.useAudioFile(
@@ -223,7 +244,7 @@ window.ViralVoice = {
 
     /*
     ========================================================
-    USE AUDIO FILE
+    UPLOAD AUDIO
     ========================================================
     */
 
@@ -231,13 +252,8 @@ window.ViralVoice = {
         file
     ) {
 
-        console.log(
-            "🎵 Audio selected:",
-            file.name
-        );
-
-
         if (
+            !file.type ||
             !file.type.startsWith(
                 "audio/"
             )
@@ -282,51 +298,9 @@ window.ViralVoice = {
             "✅ Narration loaded."
         );
 
-    },
 
-
-    /*
-    ========================================================
-    RECORD VOICE
-    ========================================================
-    */
-
-    setupRecorder: function () {
-
-        const button =
-            document.getElementById(
-                "recordVoiceBtn"
-            );
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    this.mediaRecorder &&
-                    this.mediaRecorder.state ===
-                        "recording"
-                ) {
-
-                    this.stopRecording();
-
-                }
-
-                else {
-
-                    this.startRecording();
-
-                }
-
-            }
+        console.log(
+            "✅ AUDIO READY"
         );
 
     },
@@ -356,6 +330,11 @@ window.ViralVoice = {
 
         try {
 
+            console.log(
+                "🎙️ Requesting microphone..."
+            );
+
+
             this.audioStream =
                 await navigator.mediaDevices.getUserMedia(
                     {
@@ -377,24 +356,31 @@ window.ViralVoice = {
                 )
             ) {
 
-                mimeType =
-                    "";
+                mimeType = "";
 
             }
 
 
-            this.mediaRecorder =
-                mimeType
-                    ? new MediaRecorder(
+            if (mimeType) {
+
+                this.mediaRecorder =
+                    new MediaRecorder(
                         this.audioStream,
                         {
                             mimeType:
                                 mimeType
                         }
-                    )
-                    : new MediaRecorder(
+                    );
+
+            }
+            else {
+
+                this.mediaRecorder =
+                    new MediaRecorder(
                         this.audioStream
                     );
+
+            }
 
 
             this.mediaRecorder.ondataavailable =
@@ -431,6 +417,13 @@ window.ViralVoice = {
 
                     this.currentAudioBlob =
                         blob;
+
+
+                    console.log(
+                        "🎙️ RECORDING COMPLETE:",
+                        blob.size,
+                        "bytes"
+                    );
 
 
                     this.createPreview(
@@ -484,19 +477,24 @@ window.ViralVoice = {
                 "🔴 Recording..."
             );
 
+
+            console.log(
+                "🔴 RECORDING STARTED"
+            );
+
         }
 
 
         catch (error) {
 
             console.error(
-                "❌ Microphone error:",
+                "❌ MICROPHONE ERROR:",
                 error
             );
 
 
             this.setRecordingStatus(
-                "❌ Microphone permission was denied or unavailable."
+                "❌ Microphone permission denied or unavailable."
             );
 
         }
@@ -557,6 +555,10 @@ window.ViralVoice = {
 
         if (!preview) {
 
+            console.warn(
+                "⚠️ voicePreview not found"
+            );
+
             return;
 
         }
@@ -586,45 +588,15 @@ window.ViralVoice = {
         preview.style.display =
             "block";
 
+
+        preview.load();
+
     },
 
 
     /*
     ========================================================
     AI VOICE
-    ========================================================
-    */
-
-    setupAI: function () {
-
-        const button =
-            document.getElementById(
-                "generateAIVoiceBtn"
-            );
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                this.generateAIVoice();
-
-            }
-        );
-
-    },
-
-
-    /*
-    ========================================================
-    AI GENERATION
     ========================================================
     */
 
@@ -646,38 +618,16 @@ window.ViralVoice = {
         }
 
 
-        /*
-        ====================================================
-        IMPORTANT
-
-        No paid API call yet.
-
-        This is intentionally waiting for
-        the Amharic provider decision.
-        ====================================================
-        */
-
         this.setAIStatus(
             "🤖 AI voice provider will be connected here."
         );
 
 
         console.log(
-            "🤖 AI VOICE REQUEST:",
+            "🤖 AI VOICE REQUEST",
             {
                 story:
-                    story,
-
-                style:
-                    document.getElementById(
-                        "aiVoiceStyle"
-                    )?.value,
-
-                speed:
-                    document.getElementById(
-                        "aiVoiceSpeed"
-                    )?.value
-
+                    story
             }
         );
 
@@ -686,40 +636,7 @@ window.ViralVoice = {
 
     /*
     ========================================================
-    APPROVAL
-    ========================================================
-    */
-
-    setupApproval: function () {
-
-        const button =
-            document.getElementById(
-                "approveVoiceBtn"
-            );
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                this.approveVoice();
-
-            }
-        );
-
-    },
-
-
-    /*
-    ========================================================
-    APPROVE VOICE
+    APPROVE
     ========================================================
     */
 
@@ -738,10 +655,6 @@ window.ViralVoice = {
         }
 
 
-        this.approved =
-            true;
-
-
         window.ViralProject =
             window.ViralProject || {};
 
@@ -751,6 +664,10 @@ window.ViralVoice = {
 
 
         ViralProject.voiceApproved =
+            true;
+
+
+        this.approved =
             true;
 
 
@@ -782,12 +699,6 @@ window.ViralVoice = {
         );
 
 
-        /*
-        ====================================================
-        NEXT STEP
-        ====================================================
-        */
-
         this.showSubtitleStep();
 
     },
@@ -811,6 +722,40 @@ window.ViralVoice = {
 
             button.disabled =
                 false;
+
+        }
+
+    },
+
+
+    /*
+    ========================================================
+    SHOW SUBTITLES
+    ========================================================
+    */
+
+    showSubtitleStep: function () {
+
+        const section =
+            document.getElementById(
+                "subtitleSection"
+            );
+
+
+        if (section) {
+
+            section.style.display =
+                "block";
+
+
+            section.scrollIntoView({
+                behavior:
+                    "smooth",
+
+                block:
+                    "start"
+
+            });
 
         }
 
@@ -907,47 +852,6 @@ window.ViralVoice = {
 
             element.textContent =
                 message;
-
-        }
-
-    },
-
-
-    /*
-    ========================================================
-    SUBTITLE STEP
-    ========================================================
-    */
-
-    showSubtitleStep: function () {
-
-        const subtitleSection =
-            document.getElementById(
-                "subtitleSection"
-            );
-
-
-        if (subtitleSection) {
-
-            subtitleSection.style.display =
-                "block";
-
-
-            subtitleSection.scrollIntoView({
-                behavior:
-                    "smooth",
-
-                block:
-                    "start"
-
-            });
-
-        }
-        else {
-
-            console.log(
-                "📝 Subtitle step will be added next."
-            );
 
         }
 
