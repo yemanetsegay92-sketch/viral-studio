@@ -196,7 +196,14 @@
             id="status"
             class="status"
         ></div>
-
+<button
+    id="demoAnalysisBtn"
+    class="secondary-btn"
+    type="button"
+    style="margin-top:10px;"
+>
+    🧪 Test Story Stage
+</button>
 
     </section>
 
@@ -396,7 +403,87 @@ window.addEventListener(
 );
 
 </script>
+<script>
 
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const demo =
+            document.getElementById(
+                "demoAnalysisBtn"
+            );
+
+        if (!demo) return;
+
+        demo.addEventListener(
+            "click",
+            () => {
+
+                /*
+                =========================================
+                DEMO SCENE ANALYSIS
+                =========================================
+                */
+
+                document.getElementById(
+                    "characters"
+                ).textContent =
+                    "ኮሮ የተባለ ላማ";
+
+
+                document.getElementById(
+                    "sceneDescription"
+                ).textContent =
+                    "ኮሮ ወደ አጥር ቀርቦ ከማዶ ያለውን ምግብ ለመድረስ እየሞከረ ነው";
+
+
+                document.getElementById(
+                    "storyInterpretation"
+                ).textContent =
+                    "ኮሮ በጣም ርቦታል፣ ግን ምግቡ ከአጥሩ ማዶ ነው።";
+
+
+                /*
+                =========================================
+                SHOW ANALYSIS RESULT
+                =========================================
+                */
+
+                const result =
+                    document.getElementById(
+                        "analysisResult"
+                    );
+
+                const empty =
+                    document.getElementById(
+                        "analysisEmpty"
+                    );
+
+
+                if (result) {
+
+                    result.classList.remove(
+                        "hidden"
+                    );
+
+                }
+
+
+                if (empty) {
+
+                    empty.style.display =
+                        "none";
+
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 </body>
 
