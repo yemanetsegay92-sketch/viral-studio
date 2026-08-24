@@ -585,6 +585,110 @@
     ></div>
 
 </section>
+
+  <!-- =========================
+     STEP 05 — SUBTITLES
+========================== -->
+
+<section
+    id="subtitleSection"
+    class="panel subtitle-panel"
+    style="display:none;"
+>
+
+    <div class="eyebrow">
+        STEP 05
+    </div>
+
+    <h2>
+        📝 Amharic Subtitles
+    </h2>
+
+    <p>
+        Create subtitles from your approved
+        Amharic narration.
+    </p>
+
+
+    <div class="subtitle-settings">
+
+        <label>
+            Subtitle style
+        </label>
+
+        <select id="subtitleStyle">
+
+            <option value="clean">
+                Clean
+            </option>
+
+            <option value="bold">
+                Bold
+            </option>
+
+            <option value="story">
+                Story
+            </option>
+
+        </select>
+
+
+        <label style="display:block;margin-top:12px;">
+            Text size
+        </label>
+
+        <input
+            id="subtitleSize"
+            type="range"
+            min="18"
+            max="42"
+            value="28"
+        >
+
+    </div>
+
+
+    <div
+        id="subtitlePreview"
+        class="subtitle-preview"
+    >
+        Your Amharic subtitles will appear here.
+    </div>
+
+
+    <div
+        id="subtitleList"
+        class="subtitle-list"
+    ></div>
+
+
+    <button
+        id="generateSubtitlesBtn"
+        class="secondary-btn"
+        type="button"
+        style="margin-top:14px;"
+    >
+        📝 Generate Subtitles
+    </button>
+
+
+    <button
+        id="approveSubtitlesBtn"
+        class="primary-btn"
+        type="button"
+        disabled
+        style="margin-top:12px;"
+    >
+        ✅ Approve Subtitles
+    </button>
+
+
+    <div
+        id="subtitleStatus"
+        class="status"
+    ></div>
+
+</section>
   
 </main>
 
