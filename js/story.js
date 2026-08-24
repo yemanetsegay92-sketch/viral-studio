@@ -5,21 +5,13 @@
 VIRAL — AMHARIC STORY GENERATOR
 STEP 03
 DEMO MODE
-
-This version does NOT call a paid AI API.
-
-It creates a demo Amharic narration from
-the scene-analysis information.
-
-Later we can replace the demo generator
-with a real AI request without changing
-the rest of the interface.
 ============================================================
 */
 
 window.ViralStory = {
 
     generating: false,
+    approved: false,
 
 
     /*
@@ -35,38 +27,97 @@ window.ViralStory = {
         );
 
 
-        const button =
+        const narrationButton =
             document.getElementById(
                 "narrationBtn"
             );
 
 
-        if (!button) {
+        if (narrationButton) {
+
+            narrationButton.addEventListener(
+                "click",
+                () => {
+
+                    this.generate();
+
+                }
+            );
+
+        }
+        else {
 
             console.warn(
                 "⚠️ narrationBtn not found"
             );
 
-            return;
+        }
+
+
+        /*
+        ====================================================
+        APPROVE BUTTON
+        ====================================================
+        */
+
+        const approveButton =
+            document.getElementById(
+                "approveStoryBtn"
+            );
+
+
+        if (approveButton) {
+
+            approveButton.addEventListener(
+                "click",
+                () => {
+
+                    this.approveStory();
+
+                }
+            );
+
+        }
+        else {
+
+            console.warn(
+                "⚠️ approveStoryBtn not found"
+            );
 
         }
 
 
-        button.addEventListener(
-            "click",
-            () => {
+        /*
+        ====================================================
+        EDIT BUTTON
+        ====================================================
+        */
 
-                this.generate();
+        const editButton =
+            document.getElementById(
+                "editStoryBtn"
+            );
 
-            }
-        );
+
+        if (editButton) {
+
+            editButton.addEventListener(
+                "click",
+                () => {
+
+                    this.editStory();
+
+                }
+            );
+
+        }
 
     },
 
 
     /*
     ========================================================
-    GENERATE STORY
+    GENERATE
     ========================================================
     */
 
@@ -91,12 +142,6 @@ window.ViralStory = {
             "🇪🇹 Creating Amharic story..."
         );
 
-
-        /*
-        ====================================================
-        GET CURRENT ANALYSIS
-        ====================================================
-        */
 
         const analysis =
             this.getAnalysis();
@@ -129,7 +174,7 @@ window.ViralStory = {
 
 
                 this.setStatus(
-                    "✅ Amharic story created."
+                    "✅ Amharic story created. Please review it."
                 );
 
 
@@ -150,7 +195,7 @@ window.ViralStory = {
 
     /*
     ========================================================
-    GET ANALYSIS FROM SCREEN
+    GET ANALYSIS
     ========================================================
     */
 
@@ -198,7 +243,7 @@ window.ViralStory = {
 
     /*
     ========================================================
-    DEMO AMHARIC STORY
+    DEMO STORY
     ========================================================
     */
 
@@ -216,16 +261,8 @@ window.ViralStory = {
             "አንድ አስደሳች ነገር እየተከሰተ ነው";
 
 
-        /*
-        ====================================================
-        DEMO NARRATION
-
-        This is intentionally written as storytelling,
-        not word-for-word translation.
-        ====================================================
-        */
-
         return (
+
             "ይህ ታሪክ ከ"
             + characters
             + " ጋር ይጀምራል። "
@@ -233,12 +270,14 @@ window.ViralStory = {
             + description
             + "። "
 
-            + "ነገር ግን እዚህ ላይ ታሪኩ "
-            + "የሚጠብቀን አንድ አስገራሚ ነገር "
-            + "አለው። "
+            + "ነገር ግን እዚህ ላይ "
+            + "ታሪኩ የሚጠብቀን "
+            + "አንድ አስገራሚ ነገር አለው። "
 
-            + "ምን እንደሚከሰት ለማወቅ "
-            + "እስከመጨረሻው እንመልከት!"
+            + "ምን እንደሚከሰት "
+            + "ለማወቅ እስከመጨረሻው "
+            + "እንመልከት!"
+
         );
 
     },
@@ -286,6 +325,205 @@ window.ViralStory = {
             "🇪🇹 AMHARIC STORY:",
             story
         );
+
+    },
+
+
+    /*
+    ========================================================
+    APPROVE STORY
+    ========================================================
+    */
+
+    approveStory: function () {
+
+        const textarea =
+            document.getElementById(
+                "amharicStory"
+            );
+
+
+        if (!textarea) {
+
+            this.setStatus(
+                "❌ Story box not found."
+            );
+
+            return;
+
+        }
+
+
+        const story =
+            textarea.value.trim();
+
+
+        if (!story) {
+
+            this.setStatus(
+                "❌ Please generate a story first."
+            );
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        SAVE APPROVED STORY
+        ====================================================
+        */
+
+        this.approved =
+            true;
+
+
+        window.ViralProject =
+            window.ViralProject || {};
+
+
+        ViralProject.amharicStory =
+            story;
+
+
+        ViralProject.storyApproved =
+            true;
+
+
+        /*
+        ====================================================
+        UPDATE UI
+        ====================================================
+        */
+
+        textarea.disabled =
+            true;
+
+
+        const approveButton =
+            document.getElementById(
+                "approveStoryBtn"
+            );
+
+
+        if (approveButton) {
+
+            approveButton.disabled =
+                true;
+
+            approveButton.textContent =
+                "✅ Story Approved";
+
+        }
+
+
+        this.setStatus(
+            "✅ Story approved. Ready for voice generation."
+        );
+
+
+        console.log(
+            "✅ APPROVED AMHARIC STORY:",
+            story
+        );
+
+
+        /*
+        ====================================================
+        SHOW NEXT STEP
+        ====================================================
+        */
+
+        this.showVoiceStep();
+
+    },
+
+
+    /*
+    ========================================================
+    EDIT STORY
+    ========================================================
+    */
+
+    editStory: function () {
+
+        const textarea =
+            document.getElementById(
+                "amharicStory"
+            );
+
+
+        if (!textarea) {
+
+            return;
+
+        }
+
+
+        textarea.disabled =
+            false;
+
+
+        textarea.focus();
+
+
+        const approveButton =
+            document.getElementById(
+                "approveStoryBtn"
+            );
+
+
+        if (approveButton) {
+
+            approveButton.disabled =
+                false;
+
+            approveButton.textContent =
+                "✅ Approve Story";
+
+        }
+
+
+        this.setStatus(
+            "✏️ Story editing enabled."
+        );
+
+    },
+
+
+    /*
+    ========================================================
+    NEXT STEP — VOICE
+    ========================================================
+    */
+
+    showVoiceStep: function () {
+
+        const voiceSection =
+            document.getElementById(
+                "voiceSection"
+            );
+
+
+        if (voiceSection) {
+
+            voiceSection.style.display =
+                "block";
+
+            voiceSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+        }
+        else {
+
+            console.log(
+                "🔊 Voice step will be added next."
+            );
+
+        }
 
     },
 
@@ -355,7 +593,7 @@ window.ViralStory = {
 
         const status =
             document.getElementById(
-                "status"
+                "storyStatus"
             );
 
 
