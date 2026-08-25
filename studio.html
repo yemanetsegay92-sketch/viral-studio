@@ -689,6 +689,170 @@
     ></div>
 
 </section>
+
+<!-- =========================
+     STEP 06 — FINAL RENDER
+========================== -->
+
+<section
+    id="renderSection"
+    class="panel render-panel"
+    style="display:none;"
+>
+
+    <div class="eyebrow">
+        STEP 06
+    </div>
+
+    <h2>
+        🎬 Final Rendering
+    </h2>
+
+    <p>
+        Combine your video, Amharic voice,
+        and subtitles into the final short.
+    </p>
+
+
+    <div class="render-info">
+
+        <div class="result-card">
+
+            <label>
+                Format
+            </label>
+
+            <p>
+                📱 9:16 Vertical
+            </p>
+
+        </div>
+
+
+        <div class="result-card">
+
+            <label>
+                Processing
+            </label>
+
+            <p>
+                💻 On your device
+            </p>
+
+        </div>
+
+
+        <div class="result-card">
+
+            <label>
+                Cost
+            </label>
+
+            <p>
+                🆓 FREE
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button
+        id="renderVideoBtn"
+        class="primary-btn"
+        type="button"
+    >
+        🎬 Render Final Video
+    </button>
+
+
+    <div
+        id="renderStatus"
+        class="status"
+        style="margin-top:12px;"
+    >
+        Ready to render.
+    </div>
+
+
+    <div
+        id="renderProgressWrap"
+        style="
+            display:none;
+            margin-top:14px;
+        "
+    >
+
+        <div
+            style="
+                display:flex;
+                justify-content:space-between;
+                margin-bottom:6px;
+            "
+        >
+
+            <span>
+                Rendering...
+            </span>
+
+            <strong id="renderProgressText">
+                0%
+            </strong>
+
+        </div>
+
+
+        <progress
+            id="renderProgress"
+            value="0"
+            max="100"
+            style="width:100%;"
+        ></progress>
+
+    </div>
+
+
+    <!-- FINAL VIDEO -->
+
+    <div
+        id="finalVideoWrap"
+        style="
+            display:none;
+            margin-top:18px;
+        "
+    >
+
+        <h3>
+            🎥 Final Video
+        </h3>
+
+
+        <video
+            id="finalVideoPreview"
+            controls
+            playsinline
+            style="
+                width:100%;
+                max-height:600px;
+                background:#000;
+                border-radius:12px;
+                margin-top:10px;
+            "
+        ></video>
+
+
+        <button
+            id="downloadFinalVideoBtn"
+            class="primary-btn"
+            type="button"
+            style="margin-top:14px;"
+        >
+            ⬇️ Download Final Video
+        </button>
+
+    </div>
+
+</section>
   
 </main>
 
@@ -705,17 +869,16 @@
 
 
 
-<!-- JavaScript -->
+<!-- FFmpeg utilities -->
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 
 <script src="js/video.js"></script>
-
 <script src="js/ai.js"></script>
-
 <script src="js/story.js"></script>
-
 <script src="js/voice.js"></script>
-
 <script src="js/subtitles.js"></script>
+<script src="js/renderer.js"></script>
 
 
 <script>
