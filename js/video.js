@@ -3,6 +3,11 @@
 window.ViralVideo = {
 
     video: null,
+
+    videoFile: null,
+
+    videoUrl: null,
+
     startRange: null,
     endRange: null,
     startValue: null,
@@ -145,7 +150,7 @@ window.ViralVideo = {
                     if (!file) {
                         return;
                     }
-
+this.videoFile = file;
                     console.log(
                         "🎥 Selected:",
                         file.name
@@ -155,10 +160,14 @@ window.ViralVideo = {
                     Create local URL.
                     */
 
-                    const url =
-                        URL.createObjectURL(
-                            file
-                        );
+                    if (this.videoUrl) {
+    URL.revokeObjectURL(this.videoUrl);
+}
+
+const url =
+    URL.createObjectURL(file);
+
+this.videoUrl = url;
 
                     /*
                     Load video.

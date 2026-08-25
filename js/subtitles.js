@@ -566,19 +566,23 @@ window.ViralSubtitles = {
                     "input",
                     event => {
 
-                        const item =
-                            this.subtitles.find(
-                                subtitle =>
-                                    subtitle.id ==
-                                    subtitle.id
-                            );
+                        const id =
+    Number(
+        event.target.dataset.id
+    );
 
-                        if (item) {
+const item =
+    this.subtitles.find(
+        subtitle =>
+            subtitle.id === id
+    );
 
-                            item.text =
-                                event.target.value;
+if (item) {
 
-                        }
+    item.text =
+        event.target.value;
+
+}
 
                     }
                 );
