@@ -683,7 +683,10 @@ window.ViralRenderer = {
 
 
             this.ffmpeg =
-                new FFmpeg.FFmpeg();
+    new FFmpeg.FFmpeg({
+        classWorkerURL:
+            window.ViralFFmpegWorkerURL
+    });
 
 
             /*
