@@ -870,18 +870,30 @@
 
 <!-- FFmpeg browser library -->
 
-<script type="module">
+<script src="/ffmpeg/ffmpeg.js"></script>
 
-import {
-    FFmpeg
-} from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm";
+<div id="ffmpeg-test"
+     style="padding:15px;margin:15px;background:#eee;color:#111;font-size:16px;">
+    Checking local FFmpeg...
+</div>
 
-import {
-    fetchFile,
-    toBlobURL
-} from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/+esm";
+<script>
+(function () {
 
+    const box = document.getElementById("ffmpeg-test");
 
+    if (window.FFmpegWASM) {
+        box.textContent =
+            "✅ Local ffmpeg.js loaded successfully!";
+    } else {
+        box.textContent =
+            "❌ Local ffmpeg.js did NOT load.";
+    }
+
+})();
+</script>
+
+<script>
 /*
 ============================================================
 VIRAL — FFMPEG SETUP
@@ -904,43 +916,34 @@ CREATE SAME-ORIGIN WORKER URL
 ============================================================
 */
 
-const workerResponse = await fetch(
-    "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js"
+window.ViralFFmpegWorkerURL =
+    "/ffmpeg/ffmpeg-worker.js";
+
+console.log(
+    "🔥 LOCAL WORKER:",
+    window.ViralFFmpegWorkerURL
 );
 
-if (!workerResponse.ok) {
 
-    throw new Error(
-        "Could not download FFmpeg worker."
-    );
+console.log(
+    "🔥 LOCAL WORKER:",
+    window.ViralFFmpegWorkerURL
+);
 
-}
+console.log(
+    "🔥 LOCAL CORE:",
+    window.ViralFFmpegCoreURL
+);
 
-const workerSource =
-    await workerResponse.text();
-
-const workerBlob =
-    new Blob(
-        [workerSource],
-        {
-            type: "text/javascript"
-        }
-    );
-
-window.ViralFFmpegWorkerURL =
-    URL.createObjectURL(
-        workerBlob
-    );
+console.log(
+    "🔥 LOCAL WASM:",
+    window.ViralFFmpegWasmURL
+);
 
 
 console.log(
     "🔥 FFmpeg library ready:",
     typeof window.FFmpeg.FFmpeg
-);
-
-console.log(
-    "🔥 FFmpeg utilities ready:",
-    typeof window.FFmpegUtil.fetchFile
 );
 
 console.log(
