@@ -870,8 +870,8 @@
 
 
 <!-- FFmpeg utilities -->
-<script src="ffmpeg/814.ffmpeg.js"></script>
-<script src="ffmpeg/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
 
 <script src="js/video.js"></script>
 <script src="js/ai.js"></script>
@@ -880,6 +880,8 @@
 <script src="js/subtitles.js"></script>
 <script src="js/renderer.js"></script>
 
+  
+  <script>
 window.addEventListener(
     "DOMContentLoaded",
     () => {
@@ -891,7 +893,8 @@ window.addEventListener(
     }
 );
 
-</>
+</script>
+  
 <script>
 
 document.addEventListener(
@@ -930,7 +933,7 @@ document.addEventListener(
                 document.getElementById(
                     "storyInterpretation"
                 ).textContent =
-                    "ኮሮ በጣም ርቦታል፣ ግን ምግቡ ከአጥሩ ማዶ ነው።";
+                    "ኮሮ በጣም ርቦታል፣ ግን ምግቡ ከአጥሩ ማዶ ነው.";
 
 
                 /*
@@ -972,8 +975,7 @@ document.addEventListener(
     }
 );
 
-</scrip>
+</script>
 
 </body>
-
-</html> 
+</html>
