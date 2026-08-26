@@ -868,13 +868,25 @@
 >
 
 
+<!-- FFmpeg browser library -->
 
-<!-- FFmpeg utilities -->
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
 <script type="module">
-import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm";
-import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/+esm";
+
+import {
+    FFmpeg
+} from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm";
+
+import {
+    fetchFile,
+    toBlobURL
+} from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/+esm";
+
+
+/*
+============================================================
+VIRAL — FFMPEG SETUP
+============================================================
+*/
 
 window.FFmpeg = {
     FFmpeg: FFmpeg
@@ -885,8 +897,57 @@ window.FFmpegUtil = {
     toBlobURL: toBlobURL
 };
 
-console.log("🔥 FFmpeg module loaded:", typeof window.FFmpeg.FFmpeg);
-console.log("🔥 FFmpegUtil loaded:", typeof window.FFmpegUtil.fetchFile);
+
+/*
+============================================================
+CREATE SAME-ORIGIN WORKER URL
+============================================================
+*/
+
+const workerResponse = await fetch(
+    "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js"
+);
+
+if (!workerResponse.ok) {
+
+    throw new Error(
+        "Could not download FFmpeg worker."
+    );
+
+}
+
+const workerSource =
+    await workerResponse.text();
+
+const workerBlob =
+    new Blob(
+        [workerSource],
+        {
+            type: "text/javascript"
+        }
+    );
+
+window.ViralFFmpegWorkerURL =
+    URL.createObjectURL(
+        workerBlob
+    );
+
+
+console.log(
+    "🔥 FFmpeg library ready:",
+    typeof window.FFmpeg.FFmpeg
+);
+
+console.log(
+    "🔥 FFmpeg utilities ready:",
+    typeof window.FFmpegUtil.fetchFile
+);
+
+console.log(
+    "🔥 FFmpeg same-origin worker ready:",
+    window.ViralFFmpegWorkerURL
+);
+
 </script>
 <script src="js/video.js"></script>
 <script src="js/ai.js"></script>
