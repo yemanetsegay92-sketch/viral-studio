@@ -17,11 +17,70 @@
         href="style.css"
     >
 
+    <style>
+
+        /* =====================================================
+           VIRAL LOCAL TEST MODE
+        ===================================================== */
+
+        .test-mode-card {
+            margin: 18px 0;
+            padding: 16px;
+            border-radius: 14px;
+            background: rgba(110, 80, 255, 0.12);
+            border: 1px solid rgba(130, 100, 255, 0.4);
+        }
+
+        .test-mode-card h3 {
+            margin-top: 0;
+        }
+
+        .test-mode-card p {
+            margin-bottom: 12px;
+        }
+
+        .test-btn {
+            width: 100%;
+            padding: 14px;
+            border: 0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .render-test-note {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .render-debug {
+            margin-top: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        #testAudioPreview {
+            width: 100%;
+            margin-top: 12px;
+            display: none;
+        }
+
+    </style>
+
 </head>
 
 
 <body>
 
+
+<!-- =========================================================
+     TOP BAR
+========================================================= -->
 
 <header class="topbar">
 
@@ -41,270 +100,308 @@
 <main class="studio">
 
 
-    <!-- =========================
-         VIDEO SECTION
-    ========================== -->
+<!-- =========================================================
+     STEP 01 — VIDEO
+========================================================= -->
 
-    <section class="panel video-panel">
+<section class="panel video-panel">
 
-
-        <div class="panel-title">
-
-            <div>
-
-                <div class="eyebrow">
-                    STEP 01
-                </div>
-
-                <h2>
-                    Select your scene
-                </h2>
-
-            </div>
-
-
-            <button
-                id="changeVideo"
-                class="small-btn"
-            >
-                Change video
-            </button>
-
-        </div>
-
-
-
-        <div class="video-wrap">
-
-    <video
-        id="videoPreview"
-        controls
-        playsinline
-    ></video>
-
-
-    <div
-        id="videoEmpty"
-        class="video-empty"
-    >
-
-        <div style="font-size:40px;">
-            🎥
-        </div>
+    <div class="panel-title">
 
         <div>
-            Choose a video to begin
+
+            <div class="eyebrow">
+                STEP 01
+            </div>
+
+            <h2>
+                Select your scene
+            </h2>
+
         </div>
 
         <button
-            id="uploadVideoInside"
+            id="changeVideo"
             class="small-btn"
-            style="margin-top:12px;"
+            type="button"
         >
-            Upload Video
+            Change video
         </button>
 
     </div>
 
-</div>
+
+    <!-- =====================================================
+         FREE / URL SOURCE
+    ====================================================== -->
+
+    <div class="source-card" style="margin:16px 0;padding:16px;border:1px solid #ddd;border-radius:14px;">
+        <h3 style="margin:0 0 8px;">🌐 Use a video link</h3>
+        <p style="margin:0 0 10px;font-size:14px;line-height:1.5;">
+            Paste a <strong>direct video URL</strong> (WebM/MP4) from a source you are allowed to reuse.
+            VIRAL will load it into the same scene-selection system.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input id="videoUrlInput" type="url" placeholder="https://example.com/video.webm" style="flex:1;min-width:220px;padding:12px;border:1px solid #ccc;border-radius:10px;">
+            <button id="loadVideoUrl" class="small-btn" type="button">Load link</button>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="loadCaminandesSource" class="small-btn" type="button">🎬 Try Caminandes (free source)</button>
+        </div>
+        <div id="videoUrlStatus" style="margin-top:8px;font-size:13px;"></div>
+        <div style="margin-top:12px;font-size:13px;line-height:1.5;">
+            <strong>Free-source rule:</strong> verify the individual video's license before publishing.
+            Blender Open Movies are a good starting source; their licensing is shown on each item.
+        </div>
+    </div>
+
+    <div class="video-wrap">
+
+        <video
+            id="videoPreview"
+            controls
+            playsinline
+        ></video>
 
 
+        <div
+            id="videoEmpty"
+            class="video-empty"
+        >
 
-        <!-- TRIM -->
+            <div style="font-size:40px;">
+                🎥
+            </div>
 
-        <div class="trim-grid">
+            <div>
+                Choose a video to begin
+            </div>
 
-
-            <label>
-
-                <span>
-                    Start
-
-                    <strong id="startValue">
-                        0:00
-                    </strong>
-                </span>
-
-                <input
-                    id="startRange"
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value="0"
-                >
-
-            </label>
-
-
-
-            <label>
-
-                <span>
-                    End
-
-                    <strong id="endValue">
-                        0:30
-                    </strong>
-                </span>
-
-                <input
-                    id="endRange"
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value="30"
-                >
-
-            </label>
-
+            <button
+                id="uploadVideoInside"
+                class="small-btn"
+                type="button"
+                style="margin-top:12px;"
+            >
+                Upload Video
+            </button>
 
         </div>
 
+    </div>
 
 
-        <!-- DURATION -->
+    <!-- =====================================================
+         SCENE RANGE
+    ====================================================== -->
 
-        <div class="duration-card">
+    <div class="trim-grid">
+
+        <label>
 
             <span>
-                Selected duration
+                Start
+                <strong id="startValue">0:00</strong>
             </span>
 
-            <strong id="durationValue">
-                30.0 sec
-            </strong>
+            <input
+                id="startRange"
+                type="range"
+                min="0"
+                max="86400"
+                step="0.1"
+                value="0"
+            >
 
-            <small>
-                Recommended: 30–45 seconds
-            </small>
+        </label>
+
+
+        <label>
+
+            <span>
+                End
+                <strong id="endValue">0:30</strong>
+            </span>
+
+            <input
+                id="endRange"
+                type="range"
+                min="0"
+                max="86400"
+                step="0.1"
+                value="30"
+            >
+
+        </label>
+
+    </div>
+
+
+    <div class="duration-card">
+
+        <span>
+            Selected duration
+        </span>
+
+        <strong id="durationValue">
+            30.0 sec
+        </strong>
+
+        <small>
+            Recommended: 30–45 seconds
+        </small>
+
+    </div>
+
+
+    <button
+        id="analyzeBtn"
+        class="primary-btn"
+        type="button"
+    >
+        🎞️ Analyze Scene
+    </button>
+
+
+    <div
+        id="status"
+        class="status"
+    ></div>
+
+
+    <!-- =====================================================
+         LOCAL TEST MODE
+    ====================================================== -->
+
+    <div class="test-mode-card">
+
+        <h3>
+            🧪 No-API Test Mode
+        </h3>
+
+        <p>
+            Test the complete video, story, audio,
+            subtitle and final rendering pipeline
+            without using an AI API.
+        </p>
+
+        <button
+            id="startTestBtn"
+            class="test-btn"
+            type="button"
+        >
+            🚀 Start Full Local Test
+        </button>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     STEP 02 — AI ANALYSIS
+========================================================= -->
+
+<section class="panel analysis-panel">
+
+    <div class="eyebrow">
+        STEP 02
+    </div>
+
+    <h2>
+        Scene Analysis
+    </h2>
+
+
+    <div
+        id="analysisEmpty"
+        class="empty-state"
+    >
+
+        <div>
+            ✨
+        </div>
+
+        <p>
+            Your scene analysis will appear here.
+        </p>
+
+    </div>
+
+
+    <div
+        id="analysisResult"
+        class="analysis-result hidden"
+    >
+
+        <div class="result-card" id="sceneFramesCard">
+
+            <label>
+                Scene frames
+            </label>
+
+            <p id="sceneFramesStatus">🎞️ No frames extracted yet.</p>
+
+            <div id="sceneFramesGallery" style="
+                display:grid;
+                grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+                gap:10px;
+                margin-top:12px;
+            "></div>
 
         </div>
 
+        <div class="result-card">
+
+            <label>
+                Characters
+            </label>
+
+            <p id="characters">—</p>
+
+        </div>
+
+
+        <div class="result-card">
+
+            <label>
+                What is happening?
+            </label>
+
+            <p id="sceneDescription">—</p>
+
+        </div>
+
+
+        <div class="result-card">
+
+            <label>
+                Story interpretation
+            </label>
+
+            <p id="storyInterpretation">—</p>
+
+        </div>
 
 
         <button
-            id="analyzeBtn"
-            class="primary-btn"
+            id="narrationBtn"
+            class="secondary-btn"
+            type="button"
         >
-            🤖 Analyze Scene
+            🇪🇹 Generate Amharic Story
         </button>
 
+    </div>
 
-        <div
-            id="status"
-            class="status"
-        ></div>
-<button
-    id="demoAnalysisBtn"
-    class="secondary-btn"
-    type="button"
-    style="margin-top:10px;"
->
-    🧪 Test Story Stage
-</button>
-
-    </section>
+</section>
 
 
 
-    <!-- =========================
-         AI ANALYSIS
-    ========================== -->
-
-    <section class="panel analysis-panel">
-
-        <div class="eyebrow">
-            STEP 02
-        </div>
-
-        <h2>
-            AI Scene Analysis
-        </h2>
-
-
-
-        <div
-            id="analysisEmpty"
-            class="empty-state"
-        >
-
-            <div>
-                ✨
-            </div>
-
-            <p>
-                Your scene analysis will appear here.
-            </p>
-
-        </div>
-
-
-
-        <div
-            id="analysisResult"
-            class="analysis-result hidden"
-        >
-
-
-            <div class="result-card">
-
-                <label>
-                    Characters
-                </label>
-
-                <p id="characters">
-                    —
-                </p>
-
-            </div>
-
-
-
-            <div class="result-card">
-
-                <label>
-                    What is happening?
-                </label>
-
-                <p id="sceneDescription">
-                    —
-                </p>
-
-            </div>
-
-
-
-            <div class="result-card">
-
-                <label>
-                    Story interpretation
-                </label>
-
-                <p id="storyInterpretation">
-                    —
-                </p>
-
-            </div>
-
-
-
-            <button
-                id="narrationBtn"
-                class="secondary-btn"
-            >
-                🇪🇹 Generate Amharic Story
-            </button>
-
-
-        </div>
-
-
-    </section>
-<!-- =========================
-     AMHARIC STORY
-========================== -->
+<!-- =========================================================
+     STEP 03 — AMHARIC STORY
+========================================================= -->
 
 <section
     id="storySection"
@@ -365,9 +462,11 @@
 
 </section>
 
-  <!-- =========================
+
+
+<!-- =========================================================
      STEP 04 — VOICE
-========================== -->
+========================================================= -->
 
 <section
     id="voiceSection"
@@ -388,11 +487,10 @@
     </p>
 
 
-    <!-- VOICE SOURCE -->
-
     <div class="voice-source">
 
         <label>
+
             <input
                 type="radio"
                 name="voiceSource"
@@ -401,10 +499,12 @@
             >
 
             📁 Upload my narration
+
         </label>
 
 
         <label>
+
             <input
                 type="radio"
                 name="voiceSource"
@@ -412,14 +512,11 @@
             >
 
             🤖 AI Amharic voice
+
         </label>
 
     </div>
 
-
-    <!-- =========================
-         UPLOAD / RECORD
-    ========================== -->
 
     <div
         id="uploadVoicePanel"
@@ -484,12 +581,20 @@
             style="margin-top:10px;"
         ></div>
 
+        <div style="margin-top:20px;padding:14px;border:1px solid rgba(128,128,128,.22);border-radius:12px;">
+            <h4 style="margin:0 0 8px;">🎵 Optional background music</h4>
+            <p style="margin:0 0 10px;">Add a music track behind the narration. It stays optional and is mixed locally by FFmpeg.</p>
+            <input id="backgroundMusicFileInput" type="file" accept="audio/*" hidden>
+            <button id="chooseBackgroundMusicBtn" class="secondary-btn" type="button">🎵 Choose Background Music</button>
+            <button id="removeBackgroundMusicBtn" class="secondary-btn" type="button" style="display:none;">✕ Remove Music</button>
+            <div id="backgroundMusicFileName" style="margin-top:10px;"></div>
+            <audio id="backgroundMusicPreview" controls style="width:100%;margin-top:10px;display:none;"></audio>
+            <label style="display:block;margin-top:12px;">🎵 Music volume <strong id="backgroundMusicVolumeValue">20%</strong></label>
+            <input id="backgroundMusicVolume" type="range" min="0" max="100" step="1" value="20" style="width:100%;">
+        </div>
+
     </div>
 
-
-    <!-- =========================
-         AI VOICE
-    ========================== -->
 
     <div
         id="aiVoicePanel"
@@ -510,6 +615,7 @@
         <label>
             Voice style
         </label>
+
 
         <select id="aiVoiceStyle">
 
@@ -532,9 +638,15 @@
         </select>
 
 
-        <label style="display:block;margin-top:12px;">
+        <label
+            style="
+                display:block;
+                margin-top:12px;
+            "
+        >
             Speed
         </label>
+
 
         <input
             id="aiVoiceSpeed"
@@ -564,10 +676,6 @@
     </div>
 
 
-    <!-- =========================
-         APPROVAL
-    ========================== -->
-
     <button
         id="approveVoiceBtn"
         class="primary-btn"
@@ -586,9 +694,169 @@
 
 </section>
 
-  <!-- =========================
-     STEP 05 — SUBTITLES
-========================== -->
+
+
+<!-- =========================================================
+     STEP 05 — AUDIO CHOICES
+========================================================= -->
+
+<section
+    id="audioSection"
+    class="panel audio-panel"
+>
+
+    <div class="eyebrow">
+        STEP 05
+    </div>
+
+    <h2>
+        🔊 Audio choices
+    </h2>
+
+    <p>
+        Choose which sound is included in the final short, then adjust the volume with the sliders.
+    </p>
+
+    <!-- =====================================================
+         AUDIO MIX
+    ====================================================== -->
+
+    <div class="audio-mix-panel">
+
+        <button
+            id="audioMixToggle"
+            class="secondary-btn audio-mix-toggle"
+            type="button"
+            aria-expanded="true"
+        >
+            🔊 Audio choices & controls <span id="audioMixArrow">⌃</span>
+        </button>
+
+        <div id="audioMixControls" class="audio-mix-controls">
+
+            <div class="audio-choice-list">
+
+                <label class="audio-choice">
+                    <input type="radio" name="audioMode" value="narration" checked>
+                    <span>🎙️ Narration only</span>
+                </label>
+
+                <label class="audio-choice">
+                    <input type="radio" name="audioMode" value="original_narration">
+                    <span>🎙️ + 🎬 Original sound + narration</span>
+                </label>
+
+                <label class="audio-choice">
+                    <input type="radio" name="audioMode" value="original">
+                    <span>🎬 Original sound only</span>
+                </label>
+
+            </div>
+
+            <div class="audio-sliders">
+
+                <label class="audio-slider-row">
+                    <span>🎙️ Narration volume <strong id="narrationVolumeValue">100%</strong></span>
+                    <input id="narrationVolume" type="range" min="0" max="150" step="1" value="100">
+                </label>
+
+                <label class="audio-slider-row">
+                    <span>🎬 Original sound <strong id="originalVolumeValue">35%</strong></span>
+                    <input id="originalVolume" type="range" min="0" max="100" step="1" value="35">
+                </label>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+    <!-- =====================================================
+         CHARACTER VOICE STUDIO
+    ====================================================== -->
+
+    <div class="character-voice-panel" style="margin-top:20px;padding:16px;border:1px solid rgba(128,128,128,.25);border-radius:14px;">
+
+        <div class="eyebrow">CHARACTER VOICE STUDIO</div>
+
+        <h3 style="margin-top:6px;">🎭 One recording → different character sounds</h3>
+
+        <p>
+            Read the complete Amharic script once with your own voice.
+            VIRAL will use the subtitle timing to apply a different local voice style to each dialogue line.
+            No extra voice actor is required.
+        </p>
+
+        <label style="display:block;margin-top:14px;">
+            Default character voice
+            <select id="defaultCharacterVoice" style="display:block;width:100%;margin-top:8px;">
+                <option value="narrator">🎙️ Narrator — natural</option>
+                <option value="deep">🧔 Deep — low / strong</option>
+                <option value="child">👦 Child — high / playful</option>
+                <option value="high">🐦 High — bright</option>
+                <option value="old">👴 Old — low / gentle</option>
+                <option value="robot">🤖 Robot — electronic</option>
+                <option value="echo">👻 Echo — dramatic</option>
+                <option value="funny">😂 Funny — comic</option>
+                <option value="strong">😠 Strong — powerful</option>
+                <option value="soft">😌 Soft — quiet</option>
+            </select>
+        </label>
+
+        <div id="characterVoiceInfo" class="status" style="margin-top:10px;">
+            Generate subtitles first, then choose a voice style for each subtitle line.
+        </div>
+
+        <div style="margin-top:12px;font-size:.9em;opacity:.82;">
+            💡 The styles are local FFmpeg audio effects. They change pitch/tone/character,
+            but they are not copies of another real person's voice.
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     STEP 06 — LOGO / WATERMARK
+========================================================= -->
+
+<section id="logoSection" class="panel logo-panel">
+    <div class="eyebrow">STEP 06</div>
+    <h2>🏷️ Logo / Watermark</h2>
+    <p>Add your VIRAL/brand logo to the final video. This is optional.</p>
+
+    <input id="logoFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+    <button id="chooseLogoBtn" class="secondary-btn" type="button">🖼️ Choose Logo</button>
+    <button id="removeLogoBtn" class="secondary-btn" type="button" style="display:none;">✕ Remove Logo</button>
+
+    <div id="logoFileName" style="margin-top:10px;"></div>
+    <img id="logoPreview" alt="Logo preview" style="display:none;max-width:180px;max-height:100px;margin-top:12px;border-radius:8px;">
+
+    <div class="logo-settings" style="margin-top:14px;">
+        <label>Position</label>
+        <select id="logoPosition">
+            <option value="top-left">Top left</option>
+            <option value="top-right" selected>Top right</option>
+            <option value="bottom-left">Bottom left</option>
+            <option value="bottom-right">Bottom right</option>
+        </select>
+
+        <label style="display:block;margin-top:12px;">Size <strong id="logoSizeValue">18%</strong></label>
+        <input id="logoSize" type="range" min="8" max="35" value="18">
+
+        <label style="display:block;margin-top:12px;">Opacity <strong id="logoOpacityValue">85%</strong></label>
+        <input id="logoOpacity" type="range" min="20" max="100" value="85">
+    </div>
+</section>
+
+<!-- =========================================================
+     STEP 07 — SUBTITLES
+========================================================= -->
+
 
 <section
     id="subtitleSection"
@@ -597,7 +865,7 @@
 >
 
     <div class="eyebrow">
-        STEP 05
+        STEP 07
     </div>
 
     <h2>
@@ -616,6 +884,7 @@
             Subtitle style
         </label>
 
+
         <select id="subtitleStyle">
 
             <option value="clean">
@@ -633,9 +902,15 @@
         </select>
 
 
-        <label style="display:block;margin-top:12px;">
+        <label
+            style="
+                display:block;
+                margin-top:12px;
+            "
+        >
             Text size
         </label>
+
 
         <input
             id="subtitleSize"
@@ -644,6 +919,16 @@
             max="42"
             value="28"
         >
+
+        <label style="display:block;margin-top:12px;">Subtitle position</label>
+        <select id="subtitlePosition">
+            <option value="bottom" selected>Bottom</option>
+            <option value="middle">Middle</option>
+            <option value="top">Top</option>
+        </select>
+
+        <label style="display:block;margin-top:12px;">Text color</label>
+        <input id="subtitleColor" type="color" value="#ffffff" style="width:70px;height:40px;">
 
     </div>
 
@@ -690,9 +975,11 @@
 
 </section>
 
-<!-- =========================
-     STEP 06 — FINAL RENDER
-========================== -->
+
+
+<!-- =========================================================
+     STEP 08 — FINAL RENDER
+========================================================= -->
 
 <section
     id="renderSection"
@@ -701,17 +988,31 @@
 >
 
     <div class="eyebrow">
-        STEP 06
+        STEP 07
     </div>
+
 
     <h2>
         🎬 Final Rendering
     </h2>
 
+
     <p>
         Combine your video, Amharic voice,
         and subtitles into the final short.
     </p>
+
+
+    <div class="result-card" style="margin-top:14px;">
+        <label for="outputAspectRatio">
+            📐 Output format
+        </label>
+        <select id="outputAspectRatio" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;">
+            <option value="9:16">TikTok / Shorts — 9:16 (1080×1920)</option>
+            <option value="16:9">YouTube — 16:9 (1920×1080)</option>
+        </select>
+        <p id="outputAspectHelp" style="margin:8px 0 0;opacity:.8;">Vertical format with Smart Crop.</p>
+    </div>
 
 
     <div class="render-info">
@@ -722,8 +1023,8 @@
                 Format
             </label>
 
-            <p>
-                📱 9:16 Vertical
+            <p id="renderFormatSummary">
+                📱 TikTok / Shorts — 9:16 Vertical
             </p>
 
         </div>
@@ -736,7 +1037,7 @@
             </label>
 
             <p>
-                💻 On your device
+                🌐 Browser / Device
             </p>
 
         </div>
@@ -745,14 +1046,28 @@
         <div class="result-card">
 
             <label>
-                Cost
+                API Cost
             </label>
 
             <p>
-                🆓 FREE
+                🆓 FREE TEST
             </p>
 
         </div>
+
+    </div>
+
+
+    <div class="render-test-note">
+
+        <strong>
+            Local render test
+        </strong>
+
+        <br>
+
+        This uses your selected video scene,
+        narration and Amharic subtitles.
 
     </div>
 
@@ -761,6 +1076,7 @@
         id="renderVideoBtn"
         class="primary-btn"
         type="button"
+        style="margin-top:14px;"
     >
         🎬 Render Final Video
     </button>
@@ -812,8 +1128,6 @@
     </div>
 
 
-    <!-- FINAL VIDEO -->
-
     <div
         id="finalVideoWrap"
         style="
@@ -852,13 +1166,22 @@
 
     </div>
 
+
+    <div
+        id="renderDebug"
+        class="render-debug"
+    ></div>
+
 </section>
-  
+
+
 </main>
 
 
 
-<!-- Hidden video picker -->
+<!-- =========================================================
+     HIDDEN VIDEO INPUT
+========================================================= -->
 
 <input
     id="hiddenVideoInput"
@@ -868,193 +1191,1399 @@
 >
 
 
-<!-- FFmpeg browser library -->
 
-<script src="/ffmpeg/ffmpeg.js"></script>
 
-<div id="ffmpeg-test"
-     style="padding:15px;margin:15px;background:#eee;color:#111;font-size:16px;">
-    Checking local FFmpeg...
-</div>
+
+
+<!-- =========================================================
+     LOCAL FFMPEG
+========================================================= -->
+
+<script src="ffmpeg/ffmpeg.js"></script>
+
 
 <script>
+
 (function () {
 
-    const box = document.getElementById("ffmpeg-test");
+    "use strict";
 
     if (window.FFmpegWASM) {
-        box.textContent =
-            "✅ Local ffmpeg.js loaded successfully!";
+
+        window.FFmpeg =
+            window.FFmpegWASM;
+
+        console.log(
+            "✅ FFmpeg library loaded."
+        );
+
     } else {
-        box.textContent =
-            "❌ Local ffmpeg.js did NOT load.";
+
+        console.warn(
+            "⚠️ FFmpeg library not available."
+        );
+
     }
 
 })();
-</script>
-
-<script>
-/*
-============================================================
-VIRAL — FFMPEG SETUP
-============================================================
-*/
-
-window.FFmpeg = {
-    FFmpeg: FFmpeg
-};
-
-window.FFmpegUtil = {
-    fetchFile: fetchFile,
-    toBlobURL: toBlobURL
-};
-
-
-/*
-============================================================
-CREATE SAME-ORIGIN WORKER URL
-============================================================
-*/
-
-window.ViralFFmpegWorkerURL =
-    "/ffmpeg/ffmpeg-worker.js";
-
-console.log(
-    "🔥 LOCAL WORKER:",
-    window.ViralFFmpegWorkerURL
-);
-
-
-console.log(
-    "🔥 LOCAL WORKER:",
-    window.ViralFFmpegWorkerURL
-);
-
-console.log(
-    "🔥 LOCAL CORE:",
-    window.ViralFFmpegCoreURL
-);
-
-console.log(
-    "🔥 LOCAL WASM:",
-    window.ViralFFmpegWasmURL
-);
-
-
-console.log(
-    "🔥 FFmpeg library ready:",
-    typeof window.FFmpeg.FFmpeg
-);
-
-console.log(
-    "🔥 FFmpeg same-origin worker ready:",
-    window.ViralFFmpegWorkerURL
-);
 
 </script>
+
+
+
+<!-- =========================================================
+     VIRAL MODULES
+========================================================= -->
+
 <script src="js/video.js"></script>
+
+<script src="js/smartcrop.js"></script>
+
 <script src="js/ai.js"></script>
+
 <script src="js/story.js"></script>
+
 <script src="js/voice.js"></script>
+
 <script src="js/subtitles.js"></script>
+
+<!-- Renderer -->
 <script src="js/renderer.js"></script>
 
-  
-  <script>
-window.addEventListener(
-    "DOMContentLoaded",
-    () => {
+<script>
+/* =========================================================
+   AUDIO CHOICES + VOLUME CONTROLS
+========================================================= */
+(function () {
+    function byId(id) { return document.getElementById(id); }
 
-        ViralVideo.init();
+    function syncAudioState() {
+        window.ViralProject = window.ViralProject || {};
 
-        ViralVoice.init();
+        const mode = document.querySelector('input[name="audioMode"]:checked');
+        const narration = byId("narrationVolume");
+        const original = byId("originalVolume");
+        const music = byId("backgroundMusicVolume");
 
+        ViralProject.audioMode = mode ? mode.value : "narration";
+        ViralProject.narrationVolume = narration ? Number(narration.value) / 100 : 1;
+        ViralProject.originalVolume = original ? Number(original.value) / 100 : 0.35;
+        ViralProject.backgroundMusicVolume = music ? Number(music.value) / 100 : 0.20;
+
+        const defaultVoice = byId("defaultCharacterVoice");
+        ViralProject.defaultCharacterVoice = defaultVoice ? defaultVoice.value : "narrator";
+
+        if (byId("narrationVolumeValue") && narration) {
+            byId("narrationVolumeValue").textContent = narration.value + "%";
+        }
+        if (byId("originalVolumeValue") && original) {
+            byId("originalVolumeValue").textContent = original.value + "%";
+        }
+        if (byId("backgroundMusicVolumeValue") && music) {
+            byId("backgroundMusicVolumeValue").textContent = music.value + "%";
+        }
     }
-);
 
+    function initAudioControls() {
+        document.querySelectorAll('input[name="audioMode"]').forEach(function (radio) {
+            radio.addEventListener("change", syncAudioState);
+        });
+
+        ["narrationVolume", "originalVolume", "backgroundMusicVolume"].forEach(function (id) {
+            const el = byId(id);
+            if (el) el.addEventListener("input", syncAudioState);
+        });
+
+        const toggle = byId("audioMixToggle");
+        const controls = byId("audioMixControls");
+        const arrow = byId("audioMixArrow");
+
+        if (toggle && controls) {
+            toggle.addEventListener("click", function () {
+                const closed = controls.style.display === "none";
+                controls.style.display = closed ? "block" : "none";
+                toggle.setAttribute("aria-expanded", closed ? "true" : "false");
+                if (arrow) arrow.textContent = closed ? "⌃" : "⌄";
+            });
+        }
+
+        const musicInput = byId("backgroundMusicFileInput");
+        const chooseMusic = byId("chooseBackgroundMusicBtn");
+        const removeMusic = byId("removeBackgroundMusicBtn");
+        const musicPreview = byId("backgroundMusicPreview");
+        const musicName = byId("backgroundMusicFileName");
+
+        if (chooseMusic && musicInput) chooseMusic.addEventListener("click", function () { musicInput.click(); });
+        if (musicInput) musicInput.addEventListener("change", async function () {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            if (!file.type.startsWith("audio/")) { alert("Please choose an audio file."); return; }
+            try {
+                const buffer = await file.arrayBuffer();
+                ViralProject.backgroundMusicBlob = new Blob([buffer], {type:file.type || "audio/mpeg"});
+                ViralProject.backgroundMusicName = file.name;
+                if (musicPreview) {
+                    if (musicPreview.src) URL.revokeObjectURL(musicPreview.src);
+                    musicPreview.src = URL.createObjectURL(ViralProject.backgroundMusicBlob);
+                    musicPreview.style.display = "block";
+                }
+                if (musicName) musicName.textContent = "🎵 " + file.name + " — ready";
+                if (removeMusic) removeMusic.style.display = "inline-block";
+            } catch (error) {
+                console.error("Background music read failed", error);
+                if (musicName) musicName.textContent = "❌ Could not read music file. Please choose it again.";
+            }
+        });
+        if (removeMusic) removeMusic.addEventListener("click", function () {
+            ViralProject.backgroundMusicBlob = null;
+            ViralProject.backgroundMusicName = "";
+            if (musicPreview) { if (musicPreview.src) URL.revokeObjectURL(musicPreview.src); musicPreview.removeAttribute("src"); musicPreview.style.display="none"; }
+            if (musicName) musicName.textContent = "";
+            if (musicInput) musicInput.value = "";
+            removeMusic.style.display = "none";
+        });
+
+        syncAudioState();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initAudioControls);
+    } else {
+        initAudioControls();
+    }
+})();
 </script>
-  
+
+<!-- =========================================================
+   LOGO + SUBTITLE CONTROLS
+========================================================= -->
+<script>
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function state(){ window.ViralProject = window.ViralProject || {}; return window.ViralProject; }
+  function sync(){
+    const p=state();
+    const pos=byId("logoPosition"), size=byId("logoSize"), op=byId("logoOpacity");
+    p.logoPosition=pos?pos.value:"top-right";
+    p.logoSize=size?Number(size.value):18;
+    p.logoOpacity=op?Number(op.value)/100:0.85;
+    if(byId("logoSizeValue")&&size) byId("logoSizeValue").textContent=size.value+"%";
+    if(byId("logoOpacityValue")&&op) byId("logoOpacityValue").textContent=op.value+"%";
+  }
+  function init(){
+    const input=byId("logoFileInput"), choose=byId("chooseLogoBtn"), remove=byId("removeLogoBtn"), preview=byId("logoPreview"), name=byId("logoFileName");
+    if(choose&&input) choose.onclick=()=>input.click();
+    if(input) input.onchange=()=>{ const f=input.files&&input.files[0]; if(!f)return; const p=state(); p.logoBlob=f; p.logoName=f.name; if(name)name.textContent="Selected: "+f.name; if(preview){ preview.src=URL.createObjectURL(f); preview.style.display="block"; } if(remove)remove.style.display="inline-block"; };
+    if(remove) remove.onclick=()=>{ const p=state(); p.logoBlob=null;p.logoName="";input.value="";if(name)name.textContent="";if(preview){preview.removeAttribute("src");preview.style.display="none";}remove.style.display="none"; };
+    ["logoPosition","logoSize","logoOpacity","subtitlePosition","subtitleColor","defaultCharacterVoice"].forEach(id=>{const e=byId(id);if(e)e.addEventListener("input",sync);});
+    sync();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
+
+<!-- =========================================================
+     OUTPUT FORMAT CONTROL
+========================================================= -->
+<script>
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function syncOutputFormat(){
+    window.ViralProject = window.ViralProject || {};
+    const select = byId("outputAspectRatio");
+    const value = select ? select.value : (window.ViralProject.outputAspectRatio || "9:16");
+    window.ViralProject.outputAspectRatio = value;
+
+    const summary = byId("renderFormatSummary");
+    const help = byId("outputAspectHelp");
+    if(value === "16:9") {
+      if(summary) summary.textContent = "🖥️ YouTube — 16:9 Landscape";
+      if(help) help.textContent = "Landscape format, 1920×1080. Uses a centered crop to fill the frame.";
+    } else {
+      if(summary) summary.textContent = "📱 TikTok / Shorts — 9:16 Vertical";
+      if(help) help.textContent = "Vertical format, 1080×1920. Smart Crop is used when available.";
+    }
+  }
+  function init(){
+    const select=byId("outputAspectRatio");
+    if(!select) return;
+    select.value = window.ViralProject?.outputAspectRatio || "9:16";
+    select.addEventListener("change", syncOutputFormat);
+    syncOutputFormat();
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+
+<!-- =========================================================
+     CLEAN LOCAL TEST ENGINE
+========================================================= -->
+
 <script>
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+(function () {
 
-        const demo =
-            document.getElementById(
-                "demoAnalysisBtn"
+"use strict";
+
+
+console.log(
+    "🧪 VIRAL LOCAL TEST ENGINE LOADED"
+);
+
+
+
+/* =========================================================
+   TEST STATE
+========================================================= */
+
+const TestState = {
+
+    audioFile: null,
+
+    audioURL: null,
+
+    start: 0,
+
+    end: 30,
+
+    story:
+        "",
+
+    subtitles: [],
+
+    logoBlob: null,
+    logoName: "",
+    logoPosition: "top-right",
+    logoSize: 18,
+    logoOpacity: 0.85,
+
+    audioMode: "narration",
+    narrationVolume: 1,
+    originalVolume: 0.35,
+    defaultCharacterVoice: "narrator"
+
+};
+
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function get(id) {
+
+    return document.getElementById(id);
+
+}
+
+
+function show(id) {
+
+    const el = get(id);
+
+    if (el) {
+
+        el.style.display = "";
+
+    }
+
+}
+
+
+function hide(id) {
+
+    const el = get(id);
+
+    if (el) {
+
+        el.style.display = "none";
+
+    }
+
+}
+
+
+function setStatus(text) {
+
+    const el = get("status");
+
+    if (el) {
+
+        el.textContent = text;
+
+    }
+
+    console.log(
+        "STATUS:",
+        text
+    );
+
+}
+
+
+function setRenderStatus(text) {
+
+    const el =
+        get("renderStatus");
+
+    if (el) {
+
+        el.textContent = text;
+
+    }
+
+    console.log(
+        "RENDER:",
+        text
+    );
+
+}
+
+
+function setProgress(value) {
+
+    const bar =
+        get("renderProgress");
+
+    const text =
+        get("renderProgressText");
+
+    if (bar) {
+
+        bar.value =
+            value;
+
+    }
+
+    if (text) {
+
+        text.textContent =
+            Math.round(value) +
+            "%";
+
+    }
+
+}
+
+
+function formatTime(seconds) {
+
+    seconds =
+        Math.max(
+            0,
+            Number(seconds) || 0
+        );
+
+    const minutes =
+        Math.floor(
+            seconds / 60
+        );
+
+    const secs =
+        Math.floor(
+            seconds % 60
+        );
+
+    return (
+        minutes +
+        ":" +
+        String(secs).padStart(
+            2,
+            "0"
+        )
+    );
+
+}
+
+
+
+/* =========================================================
+   SYNCHRONIZE SCENE WITH ViralVideo
+========================================================= */
+
+function readCurrentScene() {
+
+    if (!window.ViralVideo || !ViralVideo.video) {
+        return null;
+    }
+
+    const start = Number(document.getElementById("startRange")?.value);
+    const end = Number(document.getElementById("endRange")?.value);
+    const videoDuration = Number(ViralVideo.video.duration);
+
+    if (!Number.isFinite(start) || !Number.isFinite(end) ||
+        !Number.isFinite(videoDuration) || videoDuration <= 0) {
+        return null;
+    }
+
+    const safeStart = Math.max(0, Math.min(start, videoDuration));
+    const safeEnd = Math.max(safeStart, Math.min(end, videoDuration));
+
+    TestState.start = safeStart;
+    TestState.end = safeEnd;
+
+    return {
+        start: safeStart,
+        end: safeEnd,
+        duration: safeEnd - safeStart
+    };
+}
+
+
+/* =========================================================
+   TEST ANALYSIS
+========================================================= */
+
+async function activateTestAnalysis() {
+
+    if (!window.ViralVideo || !ViralVideo.videoFile) {
+
+        alert(
+            "First select a video."
+        );
+
+        return;
+
+    }
+
+
+    /*
+    ---------------------------------------------------------
+    Make absolutely sure scene state is current.
+    ---------------------------------------------------------
+    */
+
+    if (!readCurrentScene()) {
+
+        alert(
+            "Please select a valid video scene."
+        );
+
+        return;
+
+    }
+
+
+    const duration =
+        TestState.end -
+        TestState.start;
+
+
+    /*
+    ---------------------------------------------------------
+    EXTRACT AND DISPLAY REPRESENTATIVE SCENE FRAMES
+    These frames are the visual reference for scene analysis.
+    ---------------------------------------------------------
+    */
+
+    let sceneFrames = [];
+
+    try {
+
+        setStatus(
+            "🎞️ Extracting scene frames..."
+        );
+
+        sceneFrames =
+            await ViralVideo.extractFrames();
+
+        const gallery =
+            get("sceneFramesGallery");
+
+        const frameStatus =
+            get("sceneFramesStatus");
+
+        if (gallery) {
+
+            gallery.innerHTML = "";
+
+            sceneFrames.forEach(
+                (frame, index) => {
+
+                    const card =
+                        document.createElement("div");
+
+                    card.style.cssText =
+                        "border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff;";
+
+                    const img =
+                        document.createElement("img");
+
+                    img.src = frame.image;
+                    img.alt =
+                        "Scene frame " + (index + 1);
+                    img.style.cssText =
+                        "display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;";
+
+                    const caption =
+                        document.createElement("div");
+
+                    caption.textContent =
+                        "Frame " + (index + 1) +
+                        " • " + frame.time + "s";
+                    caption.style.cssText =
+                        "padding:7px;font-size:12px;text-align:center;";
+
+                    card.appendChild(img);
+                    card.appendChild(caption);
+                    gallery.appendChild(card);
+
+                }
             );
 
-        if (!demo) return;
+        }
 
-        demo.addEventListener(
+        if (frameStatus) {
+            frameStatus.textContent =
+                "✅ " + sceneFrames.length +
+                " representative frames from the selected scene.";
+        }
+
+    }
+    catch (frameError) {
+
+        console.error(
+            "❌ Scene frame extraction failed:",
+            frameError
+        );
+
+        const frameStatus =
+            get("sceneFramesStatus");
+
+        if (frameStatus) {
+            frameStatus.textContent =
+                "⚠️ Could not extract scene frames: " +
+                (frameError.message || frameError);
+        }
+
+    }
+
+
+    console.log(
+        "🧪 TEST ANALYSIS SCENE:",
+        TestState.start,
+        "→",
+        TestState.end,
+        "|",
+        duration,
+        "seconds"
+    );
+
+
+    const characters =
+        get("characters");
+
+    const description =
+        get("sceneDescription");
+
+    const interpretation =
+        get("storyInterpretation");
+
+
+    if (characters) {
+        characters.textContent = "";
+    }
+
+
+    if (description) {
+        description.textContent = "";
+    }
+
+
+    if (interpretation) {
+        interpretation.textContent = "";
+    }
+
+
+    const result =
+        get("analysisResult");
+
+    const empty =
+        get("analysisEmpty");
+
+
+    if (result) {
+
+        result.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    if (empty) {
+
+        empty.style.display =
+            "none";
+
+    }
+
+
+    show("storySection");
+
+
+    const defaultVoice = get("defaultCharacterVoice");
+    if (defaultVoice) {
+        defaultVoice.addEventListener("change", function () {
+            TestState.defaultCharacterVoice = this.value;
+            window.ViralProject = window.ViralProject || {};
+            ViralProject.defaultCharacterVoice = this.value;
+            const info = get("characterVoiceInfo");
+            if (info) info.textContent = "✅ Default voice style set to: " + this.options[this.selectedIndex].text;
+        });
+        TestState.defaultCharacterVoice = defaultVoice.value || "narrator";
+    }
+
+    const story =
+        get("amharicStory");
+
+
+    if (story) {
+        story.value = "";
+    }
+
+
+    setStatus(
+        "✅ Scene frames ready. Add the story after reviewing the frames."
+    );
+
+}
+
+
+
+/* =========================================================
+   STORY
+========================================================= */
+
+function approveStory() {
+
+    const textarea =
+        get("amharicStory");
+
+
+    if (!textarea) {
+
+        return;
+
+    }
+
+
+    const text =
+        textarea.value.trim();
+
+
+    if (!text) {
+
+        alert(
+            "Please enter an Amharic story first."
+        );
+
+        return;
+
+    }
+
+
+    TestState.story =
+        text;
+
+    window.ViralProject = window.ViralProject || {};
+    ViralProject.amharicStory = text;
+    ViralProject.storyApproved = true;
+
+
+    const status =
+        get("storyStatus");
+
+
+    if (status) {
+
+        status.textContent =
+            "✅ Story approved for local test.";
+
+    }
+
+
+    show("voiceSection");
+
+
+    setStatus(
+        "✅ Story approved."
+    );
+
+
+    get("voiceSection")
+        ?.scrollIntoView({
+            behavior: "smooth"
+        });
+
+}
+
+
+
+/* =========================================================
+   SELECTED SCENE DURATION
+========================================================= */
+
+function getSceneDuration() {
+
+    const scene = readCurrentScene();
+
+    return Math.max(
+        0,
+        TestState.end -
+        TestState.start
+    );
+
+}
+
+
+
+/* =========================================================
+   TEST SUBTITLES
+========================================================= */
+
+function createTestSubtitles() {
+
+    const text =
+        TestState.story.trim();
+
+
+    if (!text) {
+
+        alert(
+            "No story available."
+        );
+
+        return;
+
+    }
+
+
+    const duration =
+        getSceneDuration();
+
+
+    if (duration <= 0) {
+
+        alert(
+            "Please select a valid scene."
+        );
+
+        return;
+
+    }
+
+
+    const sentences =
+        text
+            .split(/[።.!?]+/)
+            .map(
+                function (item) {
+
+                    return item.trim();
+
+                }
+            )
+            .filter(Boolean);
+
+
+    TestState.subtitles = [];
+
+
+    const count =
+        Math.max(
+            1,
+            sentences.length
+        );
+
+
+    const chunk =
+        duration /
+        count;
+
+
+    sentences.forEach(
+        function (
+            sentence,
+            index
+        ) {
+
+            TestState.subtitles.push({
+
+                text:
+                    sentence,
+
+                start:
+                    index *
+                    chunk,
+
+                end:
+                    (index + 1) *
+                    chunk,
+
+                voiceProfile:
+                    TestState.defaultCharacterVoice ||
+                    window.ViralProject?.defaultCharacterVoice ||
+                    "narrator"
+
+            });
+
+        }
+    );
+
+
+    renderSubtitleList();
+
+
+    const preview =
+        get("subtitlePreview");
+
+
+    if (preview) {
+
+        preview.textContent =
+            sentences.join(" ");
+
+    }
+
+
+    const approve =
+        get("approveSubtitlesBtn");
+
+
+    if (approve) {
+
+        approve.disabled =
+            false;
+
+    }
+
+
+    setStatus(
+        "✅ Subtitles generated. Assign a character voice style to each line, then approve."
+    );
+
+
+    console.log(
+        "📝 SUBTITLES:",
+        TestState.subtitles
+    );
+
+}
+
+
+
+/* =========================================================
+   RENDER SUBTITLE LIST
+========================================================= */
+
+function renderSubtitleList() {
+
+    const list =
+        get("subtitleList");
+
+
+    if (!list) {
+
+        return;
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    TestState.subtitles.forEach(
+        function (subtitle) {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+            div.className =
+                "result-card";
+
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+
+            label.textContent =
+                formatTime(
+                    subtitle.start
+                ) +
+                " → " +
+                formatTime(
+                    subtitle.end
+                );
+
+
+            const p =
+                document.createElement(
+                    "p"
+                );
+
+
+            p.textContent =
+                subtitle.text;
+
+
+            div.appendChild(
+                label
+            );
+
+            div.appendChild(
+                p
+            );
+
+            const voiceLabel = document.createElement("label");
+            voiceLabel.textContent = "🎭 Character voice";
+            voiceLabel.style.display = "block";
+            voiceLabel.style.marginTop = "10px";
+
+            const voiceSelect = document.createElement("select");
+            voiceSelect.className = "subtitle-voice";
+            voiceSelect.dataset.index = String(TestState.subtitles.indexOf(subtitle));
+            voiceSelect.style.width = "100%";
+            voiceSelect.innerHTML = `
+                <option value="narrator">🎙️ Narrator — natural</option>
+                <option value="deep">🧔 Deep — low / strong</option>
+                <option value="child">👦 Child — high / playful</option>
+                <option value="high">🐦 High — bright</option>
+                <option value="old">👴 Old — low / gentle</option>
+                <option value="robot">🤖 Robot — electronic</option>
+                <option value="echo">👻 Echo — dramatic</option>
+                <option value="funny">😂 Funny — comic</option>
+                <option value="strong">😠 Strong — powerful</option>
+                <option value="soft">😌 Soft — quiet</option>`;
+            voiceSelect.value = subtitle.voiceProfile || TestState.defaultCharacterVoice || "narrator";
+            voiceSelect.addEventListener("change", function () {
+                subtitle.voiceProfile = this.value;
+                window.ViralProject = window.ViralProject || {};
+                ViralProject.defaultCharacterVoice = TestState.defaultCharacterVoice || "narrator";
+            });
+
+            div.appendChild(voiceLabel);
+            div.appendChild(voiceSelect);
+
+            list.appendChild(
+                div
+            );
+
+        }
+    );
+
+}
+
+
+
+/* =========================================================
+   APPROVE SUBTITLES
+========================================================= */
+
+function approveSubtitles() {
+
+    if (
+        !TestState.subtitles.length
+    ) {
+
+        createTestSubtitles();
+
+    }
+
+
+    if (
+        !TestState.subtitles.length
+    ) {
+
+        return;
+
+    }
+
+
+    const voiceFields = document.querySelectorAll("#subtitleList .subtitle-voice");
+    voiceFields.forEach(function (field) {
+        const index = Number(field.dataset.index);
+        if (TestState.subtitles[index]) {
+            TestState.subtitles[index].voiceProfile = field.value || "narrator";
+        }
+    });
+
+    window.ViralProject = window.ViralProject || {};
+    ViralProject.defaultCharacterVoice = TestState.defaultCharacterVoice || "narrator";
+    ViralProject.subtitles = TestState.subtitles;
+    ViralProject.subtitlesApproved = true;
+
+    const status =
+        get("subtitleStatus");
+
+
+    if (status) {
+
+        status.textContent =
+            "✅ Subtitles approved.";
+
+    }
+
+
+    show("renderSection");
+
+
+    setStatus(
+        "🎬 Everything is ready for rendering."
+    );
+
+
+    get("renderSection")
+        ?.scrollIntoView({
+            behavior: "smooth"
+        });
+
+}
+
+
+
+/* =========================================================
+   FULL LOCAL TEST
+========================================================= */
+
+function startFullTest() {
+
+    console.log(
+        "================================================"
+    );
+
+    console.log(
+        "🚀 FULL LOCAL TEST STARTED"
+    );
+
+    console.log(
+        "================================================"
+    );
+
+
+    if (!window.ViralVideo || !ViralVideo.videoFile) {
+
+        alert(
+            "First select a video."
+        );
+
+        const input =
+            get("hiddenVideoInput");
+
+        input?.click();
+
+        return;
+
+    }
+
+
+    if (!readCurrentScene()) {
+
+        alert(
+            "Please select a valid scene."
+        );
+
+        return;
+
+    }
+
+
+    activateTestAnalysis();
+
+
+    get("storySection")
+        ?.scrollIntoView({
+            behavior: "smooth"
+        });
+
+}
+
+
+
+/* =========================================================
+   CONNECT BUTTONS
+========================================================= */
+
+function setupButtons() {
+
+    const startTest =
+        get("startTestBtn");
+
+
+    if (startTest) {
+
+        startTest.addEventListener(
             "click",
-            () => {
+            startFullTest
+        );
 
-                /*
-                =========================================
-                DEMO SCENE ANALYSIS
-                =========================================
-                */
-
-                document.getElementById(
-                    "characters"
-                ).textContent =
-                    "ኮሮ የተባለ ላማ";
+    }
 
 
-                document.getElementById(
-                    "sceneDescription"
-                ).textContent =
-                    "ኮሮ ወደ አጥር ቀርቦ ከማዶ ያለውን ምግብ ለመድረስ እየሞከረ ነው";
+    const narration =
+        get("narrationBtn");
 
 
-                document.getElementById(
-                    "storyInterpretation"
-                ).textContent =
-                    "ኮሮ በጣም ርቦታል፣ ግን ምግቡ ከአጥሩ ማዶ ነው.";
+    if (narration) {
+
+        narration.addEventListener(
+            "click",
+            function () {
+
+                show(
+                    "storySection"
+                );
 
 
-                /*
-                =========================================
-                SHOW ANALYSIS RESULT
-                =========================================
-                */
-
-                const result =
-                    document.getElementById(
-                        "analysisResult"
-                    );
-
-                const empty =
-                    document.getElementById(
-                        "analysisEmpty"
-                    );
+                const story =
+                    get("amharicStory");
 
 
-                if (result) {
+                if (story) {
 
-                    result.classList.remove(
-                        "hidden"
-                    );
+                    story.value =
+                        TestState.story;
 
                 }
 
 
-                if (empty) {
-
-                    empty.style.display =
-                        "none";
-
-                }
+                get("storySection")
+                    ?.scrollIntoView({
+                        behavior: "smooth"
+                    });
 
             }
         );
 
     }
-);
+
+
+    const approveStoryButton =
+        get("approveStoryBtn");
+
+
+    if (approveStoryButton) {
+
+        approveStoryButton.addEventListener(
+            "click",
+            approveStory
+        );
+
+    }
+
+
+    const subtitleButton =
+        get("generateSubtitlesBtn");
+
+
+    if (subtitleButton) {
+
+        subtitleButton.addEventListener(
+            "click",
+            createTestSubtitles
+        );
+
+    }
+
+
+    const approveSubtitleButton =
+        get("approveSubtitlesBtn");
+
+
+    if (approveSubtitleButton) {
+
+        approveSubtitleButton.addEventListener(
+            "click",
+            approveSubtitles
+        );
+
+    }
+
+
+    const downloadButton =
+        get("downloadFinalVideoBtn");
+
+
+    if (downloadButton) {
+
+        downloadButton.addEventListener(
+            "click",
+            function () {
+
+                /*
+                -----------------------------------------
+                Prefer renderer.js download function.
+                -----------------------------------------
+                */
+
+                if (
+                    window.ViralRenderer &&
+                    ViralRenderer.finalVideoBlob &&
+                    typeof ViralRenderer.downloadFinalVideo ===
+                        "function"
+                ) {
+
+                    ViralRenderer.downloadFinalVideo();
+
+                    return;
+
+                }
+
+
+                /*
+                -----------------------------------------
+                Fallback
+                -----------------------------------------
+                */
+
+                if (
+                    window.ViralRenderer &&
+                    ViralRenderer.finalVideoURL
+                ) {
+
+                    const link =
+                        document.createElement(
+                            "a"
+                        );
+
+                    link.href =
+                        ViralRenderer.finalVideoURL;
+
+                    link.download =
+                        "VIRAL-Amharic-Short.mp4";
+
+                    document.body.appendChild(
+                        link
+                    );
+
+                    link.click();
+
+                    link.remove();
+
+                    return;
+
+                }
+
+
+                alert(
+                    "❌ No rendered video available."
+                );
+
+            }
+        );
+
+    }
+
+}
+
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+function initialize() {
+
+    console.log(
+        "================================================"
+    );
+
+    /*
+    ---------------------------------------------------------
+    VIDEO SYSTEM
+
+    video.js is now the single owner of video upload, preview,
+    metadata and scene selection. The old test-engine upload
+    handler has been removed.
+    ---------------------------------------------------------
+    */
+
+    if (window.ViralVideo && typeof ViralVideo.init === "function") {
+        ViralVideo.init();
+    } else {
+        console.error("❌ ViralVideo.init() is not available.");
+    }
+
+    /*
+    ---------------------------------------------------------
+    VOICE SYSTEM
+    voice.js is the single owner of voice upload, recording,
+    AI voice and approval.
+    ---------------------------------------------------------
+    */
+    if (window.ViralVoice && typeof ViralVoice.init === "function") {
+        ViralVoice.init();
+    } else {
+        console.error("❌ ViralVoice.init() is not available.");
+    }
+
+    console.log(
+        "🔥 VIRAL LOCAL TEST SYSTEM INITIALIZING"
+    );
+
+    console.log(
+        "================================================"
+    );
+
+
+    setupButtons();
+
+
+    /*
+    ---------------------------------------------------------
+    Put default test story in editor.
+    ---------------------------------------------------------
+    */
+
+    const story =
+        get("amharicStory");
+
+
+    if (story) {
+        story.value = "";
+    }
+
+
+
+
+    console.log(
+        "✅ VIRAL LOCAL TEST SYSTEM READY"
+    );
+
+}
+
+
+
+/* =========================================================
+   START
+========================================================= */
+
+if (
+    document.readyState ===
+    "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initialize
+    );
+
+} else {
+
+    initialize();
+
+}
+
+
+})();
 
 </script>
 
 </body>
+
 </html>
