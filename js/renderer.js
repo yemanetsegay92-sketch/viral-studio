@@ -1472,7 +1472,7 @@ loadFFmpeg: async function () {
 
         const wasmURL =
             new URL(
-                "./ffmpeg/ffmpeg-core.wasm",
+                "./ffmpeg/ffmpeg-core.wasm.gz",
                 window.location.href
             ).href;
 
@@ -1517,7 +1517,7 @@ loadFFmpeg: async function () {
         );
 
         console.log(
-            "🔎 Checking ffmpeg-core.wasm..."
+            "🔎 Checking ffmpeg-core.wasm.gz..."
         );
 
         const wasmResponse =
@@ -1530,14 +1530,14 @@ loadFFmpeg: async function () {
         ) {
 
             throw new Error(
-                "Could not load ffmpeg-core.wasm. HTTP " +
+                "Could not load ffmpeg-core.wasm.gz. HTTP " +
                 wasmResponse.status
             );
 
         }
 
         console.log(
-            "✅ ffmpeg-core.wasm reachable."
+            "✅ ffmpeg-core.wasm.gz reachable."
         );
 
         /*
