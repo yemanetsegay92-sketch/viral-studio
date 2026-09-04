@@ -128,3 +128,15 @@ These are local voice *styles/effects*, not identity cloning of another real per
 - `vercel.json` sends `Content-Type: application/wasm` and `Content-Encoding: gzip` for the compressed WASM.
 - The legacy `ffmpeg-old` WASM is removed to keep the repository small.
 - FFmpeg JavaScript/core files and rendering functionality are otherwise preserved.
+
+
+V11 — Scene Frame Export + Landscape Subtitle Fix
+-------------------------------------------------
+- Added Share Frames and Open Frames controls to the scene-frame gallery.
+- Representative frames can be shared as image files using the browser/Android share sheet.
+- Open Frames creates a simple full-screen gallery for manual saving.
+- Fixed YouTube 16:9 subtitles: subtitle PNGs now use the full 1920×1080 canvas in landscape mode instead of a 1080px-wide canvas.
+- Subtitle positioning and wrapping now adapt to the selected 9:16 or 16:9 output.
+- 9:16 remains 1080×1920 with Smart Crop.
+- 16:9 remains 1920×1080 with centered fill crop.
+- FFmpeg and compressed WASM setup from V10 are preserved.

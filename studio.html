@@ -350,6 +350,12 @@
                 margin-top:12px;
             "></div>
 
+            <div id="sceneFramesActions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+                <button id="shareSceneFramesBtn" class="secondary-btn" type="button" disabled>📤 Share Frames</button>
+                <button id="openSceneFramesBtn" class="secondary-btn" type="button" disabled>🖼️ Open Frames</button>
+            </div>
+            <p id="sceneFramesShareStatus" style="margin:8px 0 0;opacity:.8;"></p>
+
         </div>
 
         <div class="result-card">
@@ -1478,6 +1484,75 @@ function get(id) {
 }
 
 
+/* =========================================================
+   V11 — SCENE FRAME SHARING / EXPORT
+========================================================= */
+
+window.ViralSceneFrames = [];
+
+async function dataUrlToFile(dataUrl, filename) {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type || "image/jpeg" });
+}
+
+function setupSceneFrameActions() {
+    const shareBtn = get("shareSceneFramesBtn");
+    const openBtn = get("openSceneFramesBtn");
+    const status = get("sceneFramesShareStatus");
+
+    if (!shareBtn || !openBtn) return;
+
+    shareBtn.disabled = !window.ViralSceneFrames.length;
+    openBtn.disabled = !window.ViralSceneFrames.length;
+
+    shareBtn.onclick = async function() {
+        if (!window.ViralSceneFrames.length) return;
+        try {
+            const files = [];
+            for (let i = 0; i < window.ViralSceneFrames.length; i++) {
+                files.push(await dataUrlToFile(
+                    window.ViralSceneFrames[i].image,
+                    "viral-scene-frame-" + (i + 1) + ".jpg"
+                ));
+            }
+
+            if (!navigator.share) {
+                if (status) status.textContent = "⚠️ Sharing is not supported here. Use Open Frames and save the images manually.";
+                return;
+            }
+
+            if (navigator.canShare && !navigator.canShare({ files })) {
+                if (status) status.textContent = "⚠️ This browser cannot share multiple image files.";
+                return;
+            }
+
+            await navigator.share({
+                title: "VIRAL scene frames",
+                text: "Representative frames from my VIRAL scene.",
+                files
+            });
+
+            if (status) status.textContent = "✅ Frames shared.";
+        } catch (error) {
+            if (error && error.name === "AbortError") return;
+            console.error("Frame sharing failed:", error);
+            if (status) status.textContent = "❌ Could not share the frames. Try Open Frames instead.";
+        }
+    };
+
+    openBtn.onclick = function() {
+        if (!window.ViralSceneFrames.length) return;
+        const html = "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>VIRAL Scene Frames</title><style>body{font-family:sans-serif;margin:16px;background:#111;color:#fff}img{display:block;width:100%;max-width:900px;margin:0 auto 18px;border-radius:10px}h2{text-align:center}</style></head><body><h2>VIRAL Scene Frames</h2>" +
+            window.ViralSceneFrames.map((f,i)=>"<p>Frame "+(i+1)+" • "+f.time+"s</p><img src=\""+f.image+"\" alt=\"Scene frame "+(i+1)+"\">").join("") + "</body></html>";
+        const blob = new Blob([html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
+}
+
+
 function show(id) {
 
     const el = get(id);
@@ -1687,6 +1762,9 @@ async function activateTestAnalysis() {
 
         sceneFrames =
             await ViralVideo.extractFrames();
+
+        window.ViralSceneFrames = sceneFrames.slice();
+        setupSceneFrameActions();
 
         const gallery =
             get("sceneFramesGallery");
