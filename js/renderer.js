@@ -1911,11 +1911,12 @@ loadFFmpeg: async function () {
                 );
 
 
-            canvas.width =
-                1080;
+            const renderAspect = window.ViralProject?.outputAspectRatio === "16:9" ? "16:9" : "9:16";
+            const canvasWidth = renderAspect === "16:9" ? 1920 : 1080;
+            const canvasHeight = renderAspect === "16:9" ? 1080 : 1920;
 
-            canvas.height =
-                500;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
 
 
             const ctx =
@@ -1942,8 +1943,8 @@ loadFFmpeg: async function () {
             ctx.clearRect(
                 0,
                 0,
-                1080,
-                1920
+                canvasWidth,
+                canvasHeight
             );
 
 
@@ -1975,11 +1976,9 @@ loadFFmpeg: async function () {
                 );
 
 
+            const fontScale = renderAspect === "16:9" ? 3.8 : 2.5;
             const fontSize =
-                Math.max(
-                    48,
-                    size * 2.5
-                );
+                Math.max(48, size * fontScale);
 
 
             /*
@@ -2017,7 +2016,7 @@ loadFFmpeg: async function () {
                     String(
                         subtitle.text
                     ),
-                    900
+                    Math.round(canvasWidth * 0.84)
                 );
 
 
@@ -2037,9 +2036,14 @@ loadFFmpeg: async function () {
             ==================================================
             */
 
-            let centerY = 250;
-            if (subtitlePosition === "top") centerY = 110;
-            else if (subtitlePosition === "middle") centerY = 960;
+            let centerY;
+            if (subtitlePosition === "top") {
+                centerY = Math.round(canvasHeight * 0.14);
+            } else if (subtitlePosition === "middle") {
+                centerY = Math.round(canvasHeight * 0.50);
+            } else {
+                centerY = Math.round(canvasHeight * 0.86);
+            }
 
 
             /*
@@ -2058,7 +2062,8 @@ loadFFmpeg: async function () {
                     centerY,
                     lineHeight,
                     fontSize,
-                    false
+                    false,
+                    canvasWidth
                 );
 
             }
@@ -2074,7 +2079,8 @@ loadFFmpeg: async function () {
                     centerY,
                     lineHeight,
                     fontSize,
-                    true
+                    true,
+                    canvasWidth
                 );
 
             }
@@ -2122,14 +2128,14 @@ loadFFmpeg: async function () {
 
                     ctx.strokeText(
                         line,
-                        540,
+                        canvasWidth / 2,
                         y
                     );
 
 
                     ctx.fillText(
                         line,
-                        540,
+                        canvasWidth / 2,
                         y
                     );
 
@@ -2269,11 +2275,15 @@ loadFFmpeg: async function () {
         centerY,
         lineHeight,
         fontSize,
-        storyMode
+        storyMode,
+        canvasWidth = 1080
     ) {
 
         const maxWidth =
-            930;
+            Math.min(
+                canvasWidth * 0.86,
+                canvasWidth - 80
+            );
 
 
         const height =
@@ -2315,10 +2325,8 @@ loadFFmpeg: async function () {
         ) {
 
             ctx.roundRect(
-                540 -
-                    (
-                        maxWidth / 2
-                    ),
+                (canvasWidth / 2) -
+                    (maxWidth / 2),
                 top,
                 maxWidth,
                 height,
@@ -2329,10 +2337,8 @@ loadFFmpeg: async function () {
         else {
 
             ctx.rect(
-                540 -
-                    (
-                        maxWidth / 2
-                    ),
+                (canvasWidth / 2) -
+                    (maxWidth / 2),
                 top,
                 maxWidth,
                 height
@@ -2818,7 +2824,7 @@ loadFFmpeg: async function () {
             filter +=
                 last +
                 subtitleLabel +
-                "overlay=0:(H-h):" +
+                "overlay=0:0:" +
                 "enable='between(t," +
                 this.escapeFilterNumber(
                     file.start
