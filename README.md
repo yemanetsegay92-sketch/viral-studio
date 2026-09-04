@@ -119,3 +119,12 @@ V7 builds on V6 without removing the existing FFmpeg, Smart Crop, logo, subtitle
 
 ### Important limitation
 These are local voice *styles/effects*, not identity cloning of another real person. Best results come when the single recording follows the same timing as the subtitle segments.
+
+## V10 — Vercel compressed WASM build
+
+- Includes the V9 manual output selector: TikTok / YouTube Shorts 9:16 or YouTube 16:9.
+- Includes `ffmpeg/ffmpeg-core.wasm.gz` instead of the uncompressed WASM.
+- `renderer.js` loads the compressed WASM path.
+- `vercel.json` sends `Content-Type: application/wasm` and `Content-Encoding: gzip` for the compressed WASM.
+- The legacy `ffmpeg-old` WASM is removed to keep the repository small.
+- FFmpeg JavaScript/core files and rendering functionality are otherwise preserved.
