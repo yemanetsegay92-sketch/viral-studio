@@ -2,36 +2,42 @@
 
 /*
 ============================================================
-VIRAL — FINAL RENDERER
+VIRAL — FINAL VIDEO RENDERER
 STEP 06
 
-REAL LOCAL MP4 RENDERING
+REAL LOCAL VIDEO RENDERING
 
-Pipeline:
+PIPELINE
 
 Selected video
       +
 Selected scene
       +
-Approved voice
+Approved narration
       +
 Approved Amharic subtitles
       ↓
 FFmpeg.wasm
       ↓
-9:16 vertical
+9:16 vertical video
       ↓
-H.264 MP4
+H.264 + AAC
       ↓
-Final video
+viral-final.mp4
 
-NO paid rendering API.
-NO video upload to our server.
-
-AI voice and recorded voice are treated identically:
-both arrive as ViralProject.voiceBlob.
+IMPORTANT
+------------------------------------------------------------
+• No paid rendering API
+• No video upload to server
+• FFmpeg runs locally in browser
+• Original video file is preserved
+• Supports many video formats as long as the bundled
+  FFmpeg build can decode them
+• Subtitle text is rendered by browser Canvas
+  so Amharic/Ethiopic characters work reliably
 ============================================================
 */
+
 
 window.ViralRenderer = {
 
@@ -47,6 +53,13 @@ window.ViralRenderer = {
 
     finalVideoUrl: null,
 
+    videoInputName: null,
+
+    voiceInputName: null,
+    musicInputName: null,
+
+    logoInputName: null,
+
 
     /*
     ========================================================
@@ -56,17 +69,26 @@ window.ViralRenderer = {
 
     init: function () {
 
+        console.log(
+            "🔥 VIRAL Renderer starting..."
+        );
+
         if (this.initialized) {
+
+            console.log(
+                "⚠️ Renderer already initialized."
+            );
+
             return;
         }
 
         this.initialized = true;
 
-        console.log(
-            "🎬 VIRAL FINAL RENDERER READY"
-        );
-
         this.setupEvents();
+
+        console.log(
+            "🎬 VIRAL Final Renderer ready."
+        );
 
     },
 
@@ -79,20 +101,42 @@ window.ViralRenderer = {
 
     setupEvents: function () {
 
+        console.log(
+            "🔥 Setting up renderer events..."
+        );
+
+
         const renderButton =
             document.getElementById(
                 "renderVideoBtn"
             );
 
-        if (renderButton) {
+
+        if (!renderButton) {
+
+            console.warn(
+                "⚠️ renderVideoBtn not found."
+            );
+
+        }
+        else {
 
             renderButton.addEventListener(
                 "click",
                 () => {
 
+                    console.log(
+                        "🖱️ FINAL RENDER BUTTON CLICKED"
+                    );
+
                     this.render();
 
                 }
+            );
+
+
+            console.log(
+                "✅ Render button connected."
             );
 
         }
@@ -103,15 +147,25 @@ window.ViralRenderer = {
                 "downloadFinalVideoBtn"
             );
 
+
         if (downloadButton) {
 
             downloadButton.addEventListener(
                 "click",
                 () => {
 
+                    console.log(
+                        "⬇️ DOWNLOAD FINAL VIDEO CLICKED"
+                    );
+
                     this.downloadFinalVideo();
 
                 }
+            );
+
+
+            console.log(
+                "✅ Download button connected."
             );
 
         }
@@ -121,7 +175,7 @@ window.ViralRenderer = {
 
     /*
     ========================================================
-    SHOW
+    SHOW RENDER SECTION
     ========================================================
     */
 
@@ -131,6 +185,7 @@ window.ViralRenderer = {
             document.getElementById(
                 "renderSection"
             );
+
 
         if (!section) {
 
@@ -142,8 +197,10 @@ window.ViralRenderer = {
 
         }
 
+
         section.style.display =
             "block";
+
 
         section.scrollIntoView({
             behavior: "smooth",
@@ -162,16 +219,24 @@ window.ViralRenderer = {
     render: async function () {
 
         console.log(
-            "🎬 FINAL MP4 RENDER STARTED"
+            "================================================"
+        );
+
+        console.log(
+            "🎬 VIRAL FINAL RENDER STARTED"
+        );
+
+        console.log(
+            "================================================"
         );
 
 
         try {
 
             /*
-            =================================================
-            VALIDATE PIPELINE
-            =================================================
+            ==================================================
+            1. VIDEO
+            ==================================================
             */
 
             const videoFile =
@@ -187,41 +252,138 @@ window.ViralRenderer = {
             }
 
 
+            console.log(
+                "🎥 VIDEO FILE:",
+                videoFile.name
+            );
+
+            console.log(
+                "🎥 VIDEO TYPE:",
+                videoFile.type || "unknown"
+            );
+
+            console.log(
+                "🎥 VIDEO SIZE:",
+                this.formatBytes(
+                    videoFile.size
+                )
+            );
+
+
+            /*
+            ==================================================
+            2. SCENE
+            ==================================================
+            */
+
             const selection =
                 this.getSelection();
 
 
-            if (
-                !selection ||
-                selection.duration <= 0
-            ) {
+            if (!selection) {
 
                 throw new Error(
-                    "Please select a valid scene."
+                    "Could not read the selected scene."
                 );
 
             }
 
+
+            if (
+                !Number.isFinite(
+                    selection.duration
+                ) ||
+                selection.duration <= 0
+            ) {
+
+                throw new Error(
+                    "Please select a valid scene longer than 0 seconds."
+                );
+
+            }
+
+
+            console.log(
+                "🎞️ SCENE:",
+                selection.start,
+                "→",
+                selection.end
+            );
+
+            console.log(
+                "⏱️ SCENE DURATION:",
+                selection.duration
+            );
+
+
+            /*
+            ==================================================
+            3. PROJECT
+            ==================================================
+            */
 
             const project =
                 window.ViralProject;
 
 
+            if (!project) {
+
+                throw new Error(
+                    "ViralProject is not available."
+                );
+
+            }
+
+
+            /*
+            ==================================================
+            4. VOICE
+            ==================================================
+            */
+
+            const audioMode = project.audioMode || "narration";
+
+            const needsNarration =
+                audioMode === "narration" ||
+                audioMode === "original_narration";
+
+            if (needsNarration) {
+
+                if (!project.voiceBlob) {
+                    throw new Error("No narration audio is available.");
+                }
+
+                if (!project.voiceApproved) {
+                    throw new Error("Please approve the narration voice first.");
+                }
+
+                console.log("🔊 APPROVED VOICE:", project.voiceBlob.type || "unknown");
+            }
+
+            console.log("🔊 AUDIO MODE:", audioMode);
+
+
+            /*
+            ==================================================
+            5. SUBTITLES
+            ==================================================
+            */
+
             if (
-                !project ||
-                !project.voiceBlob ||
-                !project.voiceApproved
+                !Array.isArray(
+                    project.subtitles
+                ) ||
+                project.subtitles.length === 0
             ) {
 
                 throw new Error(
-                    "Please approve the narration voice first."
+                    "No subtitles are available."
                 );
 
             }
 
 
             if (
-                !project.subtitles ||
                 !project.subtitlesApproved
             ) {
 
@@ -232,16 +394,23 @@ window.ViralRenderer = {
             }
 
 
+            console.log(
+                "📝 SUBTITLE COUNT:",
+                project.subtitles.length
+            );
+
+
             /*
-            =================================================
-            DISABLE BUTTON
-            =================================================
+            ==================================================
+            6. DISABLE RENDER BUTTON
+            ==================================================
             */
 
             const renderButton =
                 document.getElementById(
                     "renderVideoBtn"
                 );
+
 
             if (renderButton) {
 
@@ -257,85 +426,220 @@ window.ViralRenderer = {
             }
 
 
+            /*
+            ==================================================
+            7. START
+            ==================================================
+            */
+
             this.setProgress(
-                5,
-                "Preparing video..."
+                2,
+                "🎬 Preparing final video..."
             );
 
 
             /*
-            =================================================
-            LOAD FFMPEG
-            =================================================
+            ==================================================
+            8. LOAD FFMPEG
+            ==================================================
             */
 
             await this.loadFFmpeg();
 
 
             /*
-            =================================================
-            WRITE INPUT VIDEO
-            =================================================
+            ==================================================
+            9. CLEAN OLD FILES
+            ==================================================
+            */
+
+            this.setProgress(
+                10,
+                "🧹 Preparing FFmpeg workspace..."
+            );
+
+
+            await this.cleanupFFmpegFiles();
+
+
+            /*
+            ==================================================
+            10. WRITE VIDEO
+            ==================================================
             */
 
             this.setProgress(
                 15,
-                "Loading selected video..."
+                "📁 Loading selected video..."
             );
 
 
-            await this.ffmpeg.writeFile(
-                "input-video",
-                await this.fetchFile(
+            const videoInputName =
+                this.getVideoInputName(
                     videoFile
-                )
-            );
-
-
-            /*
-            =================================================
-            WRITE VOICE
-            =================================================
-            */
-
-            this.setProgress(
-                25,
-                "Loading approved narration..."
-            );
-
-
-            const voiceExtension =
-                this.getAudioExtension(
-                    project.voiceBlob
                 );
 
 
-            await this.ffmpeg.writeFile(
-                "voice" +
-                voiceExtension,
+            console.log(
+                "📁 FFmpeg video filename:",
+                videoInputName
+            );
+
+
+            const videoData =
                 await this.fetchFile(
-                    project.voiceBlob
-                )
+                    videoFile
+                );
+
+
+            if (
+                !videoData ||
+                !videoData.length
+            ) {
+
+                throw new Error(
+                    "Video file is empty or could not be read."
+                );
+
+            }
+
+
+            this.setProgress(
+                18,
+                "📁 Writing video into FFmpeg..."
+            );
+
+
+            await this.ffmpeg.writeFile(
+                videoInputName,
+                videoData
+            );
+
+
+            this.videoInputName =
+                videoInputName;
+
+
+            console.log(
+                "✅ VIDEO WRITTEN TO FFMPEG"
             );
 
 
             /*
-            =================================================
-            CREATE SUBTITLE IMAGE FILES
-            =================================================
+            ==================================================
+            11. WRITE VOICE WHEN NEEDED
+            ==================================================
+            */
 
-            We create subtitle PNGs in the browser.
+            let voiceInputName = null;
 
-            This is important for Amharic because the
-            browser can render Ethiopic text correctly,
-            while relying on an FFmpeg-installed font
-            inside WebAssembly is unreliable.
-            =================================================
+            if (needsNarration) {
+
+                this.setProgress(
+                    22,
+                    "🔊 Loading approved narration..."
+                );
+
+                const voiceExtension =
+                    this.getAudioExtension(
+                        project.voiceBlob
+                    );
+
+                voiceInputName =
+                    "voice-input" +
+                    voiceExtension;
+
+                const voiceData =
+                    await this.fetchFile(
+                        project.voiceBlob
+                    );
+
+                if (!voiceData || !voiceData.length) {
+                    throw new Error(
+                        "Narration audio is empty."
+                    );
+                }
+
+                await this.ffmpeg.writeFile(
+                    voiceInputName,
+                    voiceData
+                );
+
+                this.voiceInputName =
+                    voiceInputName;
+
+                console.log(
+                    "✅ VOICE WRITTEN TO FFMPEG:",
+                    voiceInputName
+                );
+            }
+
+
+            /*
+            ==================================================
+            12. WRITE OPTIONAL BACKGROUND MUSIC
+            ==================================================
+            */
+
+            let musicInputName = null;
+
+            if (project.backgroundMusicBlob) {
+                this.setProgress(26, "🎵 Loading background music...");
+
+                const musicExtension = this.getAudioExtension(project.backgroundMusicBlob);
+                musicInputName = "background-music-input" + musicExtension;
+                const musicData = await this.fetchFile(project.backgroundMusicBlob);
+
+                if (!musicData || !musicData.length) {
+                    throw new Error("Background music is empty or could not be read.");
+                }
+
+                await this.ffmpeg.writeFile(musicInputName, musicData);
+                this.musicInputName = musicInputName;
+                console.log("✅ BACKGROUND MUSIC WRITTEN TO FFMPEG:", musicInputName);
+            }
+
+
+            /*
+            ==================================================
+            13. WRITE OPTIONAL LOGO
+            ==================================================
+            */
+
+            let logoInputName = null;
+
+            if (project.logoBlob) {
+
+                this.setProgress(28, "🏷️ Loading logo...");
+
+                const logoType = String(project.logoBlob.type || "image/png").toLowerCase();
+                let logoExt = ".png";
+                if (logoType.includes("jpeg") || logoType.includes("jpg")) logoExt = ".jpg";
+                else if (logoType.includes("webp")) logoExt = ".webp";
+
+                logoInputName = "viral-logo" + logoExt;
+                const logoData = await this.fetchFile(project.logoBlob);
+
+                if (!logoData || !logoData.length) {
+                    throw new Error("Logo image is empty or could not be read.");
+                }
+
+                await this.ffmpeg.writeFile(logoInputName, logoData);
+                this.logoInputName = logoInputName;
+
+                console.log("✅ LOGO WRITTEN TO FFMPEG:", logoInputName);
+            }
+
+
+            /*
+            ==================================================
+            13. CREATE SUBTITLE IMAGES
+            ==================================================
             */
 
             this.setProgress(
-                35,
-                "Preparing Amharic subtitles..."
+                30,
+                "📝 Creating Amharic subtitle graphics..."
             );
 
 
@@ -346,73 +650,188 @@ window.ViralRenderer = {
                 );
 
 
+            console.log(
+                "📝 SUBTITLE IMAGE COUNT:",
+                subtitleFiles.length
+            );
+
+
             /*
-            =================================================
-            BUILD FILTER GRAPH
-            =================================================
+            ==================================================
+            13. BUILD FILTER
+            ==================================================
+            */
+
+            this.setProgress(
+                40,
+                project.outputAspectRatio === "16:9"
+                    ? "🎬 Building 16:9 YouTube video..."
+                    : "🎬 Building 9:16 vertical video..."
+            );
+
+
+            /*
+            ==================================================
+            13. SMART CROP
+            ==================================================
+            Analyze the selected scene locally, then pass the
+            resulting crop rectangle into the final FFmpeg
+            filter graph. If Smart Crop fails, use the normal
+            center crop fallback instead of stopping the render.
             */
 
             this.setProgress(
                 45,
-                "Building vertical video..."
+                "🧠 Finding the best 9:16 crop..."
             );
+
+            let smartCrop = null;
+            const outputAspectRatio = project.outputAspectRatio === "16:9" ? "16:9" : "9:16";
+
+            try {
+
+                if (
+                    outputAspectRatio === "9:16" &&
+                    window.ViralSmartCrop &&
+                    typeof ViralSmartCrop.analyze === "function"
+                ) {
+
+                    smartCrop =
+                        await ViralSmartCrop.analyze(
+                            window.ViralVideo.video
+                        );
+
+                    console.log(
+                        "🧠 SMART CROP RESULT:",
+                        smartCrop
+                    );
+
+                }
+
+            }
+            catch (cropError) {
+
+                console.warn(
+                    "⚠️ Smart Crop failed; using center crop fallback.",
+                    cropError
+                );
+
+                smartCrop = null;
+
+            }
 
 
             const filterData =
                 await this.buildFilterGraph(
                     project.subtitles,
                     subtitleFiles,
-                    selection.duration
+                    selection.duration,
+                    smartCrop,
+                    logoInputName,
+                    outputAspectRatio
                 );
+
+            filterData.musicInputName = musicInputName;
 
 
             /*
-            =================================================
-            BUILD FFMPEG COMMAND
-            =================================================
+            ==================================================
+            14. BUILD COMMAND
+            ==================================================
             */
 
             const args =
                 this.buildFFmpegArguments(
                     selection,
-                    voiceExtension,
+                    voiceInputName,
                     subtitleFiles,
-                    filterData
+                    filterData,
+                    logoInputName
                 );
 
 
             console.log(
-                "🎬 FFMPEG COMMAND:",
+                "================================================"
+            );
+
+            console.log(
+                "🎬 FFMPEG COMMAND"
+            );
+
+            console.log(
                 args
+            );
+
+            console.log(
+                "================================================"
             );
 
 
             /*
-            =================================================
-            RENDER
-            =================================================
+            ==================================================
+            15. RENDER
+            ==================================================
             */
 
             this.setProgress(
-                55,
-                "Rendering MP4..."
+                50,
+                "🎬 Rendering final MP4..."
             );
 
 
-            await this.ffmpeg.exec(
-                args
-            );
+            const result =
+    await this.ffmpeg.exec(
+        args
+    );
+
+
+console.log(
+    "🔥 FFMPEG EXEC RESULT:",
+    result
+);
+
+
+/*
+========================================================
+FFMPEG EXIT CODE CHECK
+========================================================
+
+0 = success
+Anything else = FFmpeg failed.
+
+IMPORTANT:
+Do NOT continue to read viral-final.mp4 when FFmpeg
+already reported a failure.
+========================================================
+*/
+
+if (
+    Number(result) !== 0
+) {
+
+    throw new Error(
+        "FFmpeg rendering failed with exit code " +
+        result +
+        ". Check the FFmpeg log above for the actual error."
+    );
+
+}
+
+
+console.log(
+    "✅ FFMPEG EXEC COMPLETED SUCCESSFULLY"
+);
 
 
             /*
-            =================================================
-            READ RESULT
-            =================================================
+            ==================================================
+            16. READ OUTPUT
+            ==================================================
             */
 
             this.setProgress(
                 90,
-                "Preparing final MP4..."
+                "📦 Reading final MP4..."
             );
 
 
@@ -428,15 +847,29 @@ window.ViralRenderer = {
             ) {
 
                 throw new Error(
-                    "FFmpeg produced an empty video."
+                    "FFmpeg finished but produced an empty MP4."
                 );
 
             }
 
 
+            console.log(
+                "✅ OUTPUT SIZE:",
+                output.length
+            );
+
+
+            /*
+            ==================================================
+            17. CREATE BLOB
+            ==================================================
+            */
+
             this.finalVideoBlob =
                 new Blob(
-                    [output.buffer],
+                    [
+                        output
+                    ],
                     {
                         type:
                             "video/mp4"
@@ -445,16 +878,23 @@ window.ViralRenderer = {
 
 
             /*
-            =================================================
-            CREATE PREVIEW
-            =================================================
+            ==================================================
+            18. CREATE URL
+            ==================================================
             */
 
-            if (this.finalVideoUrl) {
+            if (
+                this.finalVideoUrl
+            ) {
 
-                URL.revokeObjectURL(
-                    this.finalVideoUrl
-                );
+                try {
+
+                    URL.revokeObjectURL(
+                        this.finalVideoUrl
+                    );
+
+                }
+                catch {}
 
             }
 
@@ -465,6 +905,12 @@ window.ViralRenderer = {
                 );
 
 
+            /*
+            ==================================================
+            19. PREVIEW
+            ==================================================
+            */
+
             const preview =
                 document.getElementById(
                     "finalVideoPreview"
@@ -473,13 +919,29 @@ window.ViralRenderer = {
 
             if (preview) {
 
+                preview.pause();
+
                 preview.src =
                     this.finalVideoUrl;
 
                 preview.load();
 
+                preview.style.display =
+                    "block";
+
+
+                console.log(
+                    "✅ FINAL VIDEO PREVIEW READY"
+                );
+
             }
 
+
+            /*
+            ==================================================
+            20. SHOW WRAPPER
+            ==================================================
+            */
 
             const wrapper =
                 document.getElementById(
@@ -495,18 +957,63 @@ window.ViralRenderer = {
             }
 
 
+            /*
+            ==================================================
+            21. ENABLE DOWNLOAD
+            ==================================================
+            */
+
+            const downloadButton =
+                document.getElementById(
+                    "downloadFinalVideoBtn"
+                );
+
+
+            if (downloadButton) {
+
+                downloadButton.disabled =
+                    false;
+
+                downloadButton.style.display =
+                    "inline-block";
+
+            }
+
+
+            /*
+            ==================================================
+            22. SUCCESS
+            ==================================================
+            */
+
             this.setProgress(
                 100,
-                "✅ Final MP4 created successfully!"
+                "✅ Final video rendered successfully!"
             );
 
 
             console.log(
-                "🎉 VIRAL FINAL MP4 READY",
-                this.finalVideoBlob.size,
-                "bytes"
+                "================================================"
             );
 
+            console.log(
+                "🎉 VIRAL FINAL VIDEO READY"
+            );
+
+            console.log(
+                "📦 SIZE:",
+                this.formatBytes(
+                    this.finalVideoBlob.size
+                )
+            );
+
+            console.log(
+                "🎬 FORMAT: MP4 / H.264 / AAC"
+            );
+
+            console.log(
+                "================================================"
+            );
 
         }
 
@@ -514,16 +1021,35 @@ window.ViralRenderer = {
         catch (error) {
 
             console.error(
-                "❌ FINAL RENDER ERROR:",
+                "================================================"
+            );
+
+            console.error(
+                "❌ FINAL RENDER FAILED"
+            );
+
+            console.error(
                 error
+            );
+
+            console.error(
+                "================================================"
+            );
+
+
+            this.setProgress(
+                0,
+                "❌ Final rendering failed."
             );
 
 
             this.setStatus(
                 "❌ " +
                 (
-                    error.message ||
-                    "Final rendering failed."
+                    error &&
+                    error.message
+                        ? error.message
+                        : "Final rendering failed."
                 )
             );
 
@@ -536,6 +1062,7 @@ window.ViralRenderer = {
                 document.getElementById(
                     "renderVideoBtn"
                 );
+
 
             if (renderButton) {
 
@@ -576,26 +1103,188 @@ window.ViralRenderer = {
     },
 
 
+  /*
+========================================================
+GET SELECTION
+========================================================
+*/
+
+getSelection: function () {
+
+    console.log("🔎 RENDERER: Checking ViralVideo...");
+
+    if (
+        !window.ViralVideo
+    ) {
+
+        console.error(
+            "❌ window.ViralVideo does not exist."
+        );
+
+        return null;
+
+    }
+
+
+    console.log(
+        "🔎 ViralVideo:",
+        window.ViralVideo
+    );
+
+
+    console.log(
+        "🔎 ViralVideo.getSelection:",
+        typeof window.ViralVideo.getSelection
+    );
+
+
+    if (
+        typeof window.ViralVideo.getSelection !==
+            "function"
+    ) {
+
+        console.error(
+            "❌ ViralVideo.getSelection() is not a function."
+        );
+
+        return null;
+
+    }
+
+console.log(
+    "🔴 BEFORE CALL — startRange:",
+    window.ViralVideo.startRange
+        ? window.ViralVideo.startRange.value
+        : "MISSING"
+);
+
+console.log(
+    "🔴 BEFORE CALL — endRange:",
+    window.ViralVideo.endRange
+        ? window.ViralVideo.endRange.value
+        : "MISSING"
+);
+
+console.log(
+    "🔴 BEFORE CALL — video duration:",
+    window.ViralVideo.video
+        ? window.ViralVideo.video.duration
+        : "MISSING"
+);
+    const selection =
+        window.ViralVideo.getSelection();
+
+
+    console.log(
+        "🎯 RENDERER RECEIVED SELECTION:",
+        selection
+    );
+
+
+    if (selection) {
+
+        console.log(
+            "🎞️ RENDERER START:",
+            selection.start
+        );
+
+        console.log(
+            "🎞️ RENDERER END:",
+            selection.end
+        );
+
+        console.log(
+            "⏱️ RENDERER DURATION:",
+            selection.duration
+        );
+
+    }
+
+
+    return selection;
+
+},
+
     /*
     ========================================================
-    GET SELECTION
+    CREATE VIDEO INPUT NAME
     ========================================================
     */
 
-    getSelection: function () {
+    getVideoInputName: function (
+        file
+    ) {
+
+        /*
+        ----------------------------------------------------
+        Preserve the original extension.
+
+        Example:
+
+        movie.mp4
+        movie.webm
+        movie.mov
+        movie.mkv
+        movie.avi
+        ----------------------------------------------------
+        */
+
+        let extension =
+            "";
+
 
         if (
-            window.ViralVideo &&
-            typeof ViralVideo.getSelection ===
-                "function"
+            file &&
+            file.name &&
+            file.name.includes(".")
         ) {
 
-            return ViralVideo.getSelection();
+            extension =
+                file.name
+                    .substring(
+                        file.name.lastIndexOf(".")
+                    )
+                    .toLowerCase();
 
         }
 
 
-        return null;
+        /*
+        ----------------------------------------------------
+        Remove dangerous characters.
+        ----------------------------------------------------
+        */
+
+        extension =
+            extension.replace(
+                /[^a-z0-9.]/gi,
+                ""
+            );
+
+
+        /*
+        ----------------------------------------------------
+        If extension is missing, use .bin.
+
+        FFmpeg will probe the file contents.
+        ----------------------------------------------------
+        */
+
+        if (
+            !extension ||
+            extension.length > 10
+        ) {
+
+            extension =
+                ".bin";
+
+        }
+
+
+        return (
+            "input-video" +
+            extension
+        );
 
     },
 
@@ -606,207 +1295,439 @@ window.ViralRenderer = {
     ========================================================
     */
 
-    loadFFmpeg: async function () {
+loadFFmpeg: async function () {
 
-        if (this.ffmpegLoaded) {
+    console.log("========================================");
+    console.log("🔥 FFMPEG LOAD START");
+    console.log("========================================");
 
-            return;
+    if (
+        this.ffmpegLoaded &&
+        this.ffmpeg
+    ) {
+        console.log("✅ FFmpeg already loaded.");
+        return;
+    }
+
+    if (this.loadingFFmpeg) {
+
+        console.log(
+            "⏳ FFmpeg is already loading..."
+        );
+
+        const waitStart = Date.now();
+        const maxWait = 30000;
+
+        while (
+            this.loadingFFmpeg &&
+            Date.now() - waitStart < maxWait
+        ) {
+
+            await new Promise(
+                resolve =>
+                    setTimeout(resolve, 100)
+            );
 
         }
 
-
-        if (this.loadingFFmpeg) {
-
-            while (
-                this.loadingFFmpeg
-            ) {
-
-                await new Promise(
-                    resolve =>
-                        setTimeout(
-                            resolve,
-                            100
-                        )
-                );
-
-            }
-
-            return;
-
-        }
-
-
-        this.loadingFFmpeg =
-            true;
-
-
-        try {
-
-            this.setProgress(
-                8,
-                "Loading local video engine..."
-            );
-
-
-            /*
-            ------------------------------------------------
-            FFmpeg globals
-            ------------------------------------------------
-
-            These are expected to be exposed by the
-            FFmpeg browser library.
-            ------------------------------------------------
-            */
-
-            if (
-                typeof FFmpeg ===
-                "undefined"
-            ) {
-
-                throw new Error(
-                    "FFmpeg library is not loaded. Check the FFmpeg scripts in studio.html."
-                );
-
-            }
-
-
-            if (
-                typeof FFmpeg.FFmpeg !==
-                "function"
-            ) {
-
-                throw new Error(
-                    "FFmpeg browser engine was not found."
-                );
-
-            }
-
-
-            this.ffmpeg =
-    new FFmpeg.FFmpeg({
-        classWorkerURL:
-            window.ViralFFmpegWorkerURL
-    });
-
-
-            /*
-            ------------------------------------------------
-            LOGGING
-            ------------------------------------------------
-            */
-
-            this.ffmpeg.on(
-                "log",
-                ({
-                    message
-                }) => {
-
-                    console.log(
-                        "FFmpeg:",
-                        message
-                    );
-
-                }
-            );
-
-
-            /*
-            ------------------------------------------------
-            PROGRESS
-            ------------------------------------------------
-            */
-
-            this.ffmpeg.on(
-                "progress",
-                ({
-                    progress
-                }) => {
-
-                    const percent =
-                        50 +
-                        (
-                            Math.max(
-                                0,
-                                Math.min(
-                                    1,
-                                    progress
-                                )
-                            ) * 40
-                        );
-
-                    this.setProgress(
-                        percent,
-                        "🎬 Encoding MP4..."
-                    );
-
-                }
-            );
-
-
-            /*
-            ------------------------------------------------
-            LOAD CORE
-            ------------------------------------------------
-            */
-
-            const baseURL =
-                "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
-
-
-            if (
-                typeof FFmpegUtil ===
-                "undefined"
-            ) {
-
-                throw new Error(
-                    "FFmpeg utility library is not loaded."
-                );
-
-            }
-
-
-            const coreURL =
-                await FFmpegUtil.toBlobURL(
-                    baseURL +
-                    "/ffmpeg-core.js",
-                    "text/javascript"
-                );
-
-
-            const wasmURL =
-                await FFmpegUtil.toBlobURL(
-                    baseURL +
-                    "/ffmpeg-core.wasm",
-                    "application/wasm"
-                );
-
-
-            await this.ffmpeg.load({
-
-                coreURL:
-                    coreURL,
-
-                wasmURL:
-                    wasmURL
-
-            });
-
-
-            this.ffmpegLoaded =
-                true;
-
+        if (
+            this.ffmpegLoaded &&
+            this.ffmpeg
+        ) {
 
             console.log(
-                "✅ FFmpeg.wasm loaded"
+                "✅ Existing FFmpeg load completed."
+            );
+
+            return;
+
+        }
+
+        this.loadingFFmpeg = false;
+        this.ffmpegLoaded = false;
+        this.ffmpeg = null;
+
+    }
+
+    this.loadingFFmpeg = true;
+
+    try {
+
+        this.setProgress(
+            5,
+            "⚙️ Loading FFmpeg..."
+        );
+
+        /*
+        ====================================================
+        CHECK LOCAL FFMPEG LIBRARY
+        ====================================================
+        */
+
+        if (
+            !window.FFmpegWASM
+        ) {
+
+            throw new Error(
+                "FFmpegWASM is not available. Make sure ffmpeg.js is loaded before renderer.js."
             );
 
         }
 
+        if (
+            typeof window.FFmpegWASM.FFmpeg !==
+            "function"
+        ) {
 
-        finally {
+            throw new Error(
+                "FFmpeg class was not found inside FFmpegWASM."
+            );
 
-            this.loadingFFmpeg =
-                false;
+        }
+
+        console.log(
+            "✅ FFmpegWASM library found."
+        );
+
+        /*
+        ====================================================
+        CREATE INSTANCE
+        ====================================================
+        */
+
+        console.log(
+            "🧱 Creating FFmpeg instance..."
+        );
+
+        this.ffmpeg =
+            new window.FFmpegWASM.FFmpeg();
+
+        console.log(
+            "✅ FFmpeg instance created."
+        );
+
+        /*
+        ====================================================
+        LOG EVENTS
+        ====================================================
+        */
+
+        this.ffmpeg.on(
+            "log",
+            ({
+                message
+            }) => {
+
+                console.log(
+                    "FFmpeg:",
+                    message
+                );
+
+            }
+        );
+
+        /*
+        ====================================================
+        PROGRESS EVENTS
+        ====================================================
+        */
+
+        this.ffmpeg.on(
+            "progress",
+            ({
+                progress
+            }) => {
+
+                const p =
+                    Math.max(
+                        0,
+                        Math.min(
+                            1,
+                            Number(progress) || 0
+                        )
+                    );
+
+                const percent =
+                    50 + p * 40;
+
+                this.setProgress(
+                    percent,
+                    "🎬 Encoding final MP4..."
+                );
+
+            }
+        );
+
+        /*
+        ====================================================
+        BUILD ABSOLUTE LOCAL URLS
+        ====================================================
+        */
+
+        const coreURL =
+            new URL(
+                "./ffmpeg/ffmpeg-core.js",
+                window.location.href
+            ).href;
+
+        const wasmURL =
+            new URL(
+                "./ffmpeg/ffmpeg-core.wasm",
+                window.location.href
+            ).href;
+
+        console.log(
+            "📦 CORE:",
+            coreURL
+        );
+
+        console.log(
+            "📦 WASM:",
+            wasmURL
+        );
+
+        /*
+        ====================================================
+        VERIFY FILES FIRST
+        ====================================================
+        */
+
+        console.log(
+            "🔎 Checking ffmpeg-core.js..."
+        );
+
+        const coreResponse =
+            await fetch(
+                coreURL
+            );
+
+        if (
+            !coreResponse.ok
+        ) {
+
+            throw new Error(
+                "Could not load ffmpeg-core.js. HTTP " +
+                coreResponse.status
+            );
+
+        }
+
+        console.log(
+            "✅ ffmpeg-core.js reachable."
+        );
+
+        console.log(
+            "🔎 Checking ffmpeg-core.wasm..."
+        );
+
+        const wasmResponse =
+            await fetch(
+                wasmURL
+            );
+
+        if (
+            !wasmResponse.ok
+        ) {
+
+            throw new Error(
+                "Could not load ffmpeg-core.wasm. HTTP " +
+                wasmResponse.status
+            );
+
+        }
+
+        console.log(
+            "✅ ffmpeg-core.wasm reachable."
+        );
+
+        /*
+        ====================================================
+        LOAD
+        ====================================================
+        */
+
+        console.log(
+            "🔥 Calling ffmpeg.load()..."
+        );
+
+        await this.ffmpeg.load({
+
+            coreURL:
+                coreURL,
+
+            wasmURL:
+                wasmURL
+
+        });
+
+        /*
+        ====================================================
+        SUCCESS
+        ====================================================
+        */
+
+        this.ffmpegLoaded =
+            true;
+
+        console.log(
+            "========================================"
+        );
+
+        console.log(
+            "✅ LOCAL FFMPEG LOADED SUCCESSFULLY"
+        );
+
+        console.log(
+            "========================================"
+        );
+
+        this.setProgress(
+            10,
+            "✅ FFmpeg ready."
+        );
+
+    }
+
+    catch (error) {
+
+        this.ffmpegLoaded =
+            false;
+
+        this.ffmpeg =
+            null;
+
+        console.error(
+            "========================================"
+        );
+
+        console.error(
+            "❌ FFMPEG LOAD ERROR"
+        );
+
+        console.error(
+            error
+        );
+
+        console.error(
+            "========================================"
+        );
+
+        throw error;
+
+    }
+
+    finally {
+
+        this.loadingFFmpeg =
+            false;
+
+    }
+
+},
+
+
+    /*
+    ========================================================
+    CLEAN FFMPEG WORKSPACE
+    ========================================================
+    */
+
+    cleanupFFmpegFiles: async function () {
+
+        if (
+            !this.ffmpeg
+        ) {
+
+            return;
+
+        }
+
+
+        const files = [
+
+            "viral-final.mp4",
+
+            "voice-input.mp3",
+
+            "voice-input.wav",
+
+            "voice-input.ogg",
+
+            "voice-input.m4a",
+
+            "voice-input.webm",
+
+            "voice-input.audio",
+            "background-music-input.mp3",
+            "background-music-input.wav",
+            "background-music-input.ogg",
+            "background-music-input.m4a",
+            "background-music-input.webm",
+            "background-music-input.audio",
+
+            "input-video.mp4",
+
+            "input-video.webm",
+
+            "input-video.mov",
+
+            "input-video.mkv",
+
+            "input-video.avi",
+
+            "input-video.m4v",
+
+            "input-video.mpeg",
+
+            "input-video.mpg",
+
+            "input-video.bin"
+
+        ];
+
+
+        for (
+            const filename of files
+        ) {
+
+            try {
+
+                await this.ffmpeg.deleteFile(
+                    filename
+                );
+
+            }
+            catch {}
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        Remove previous subtitle images.
+        ----------------------------------------------------
+        */
+
+        try { await this.ffmpeg.deleteFile("viral-logo.png"); } catch {}
+        try { await this.ffmpeg.deleteFile("viral-logo.jpg"); } catch {}
+        try { await this.ffmpeg.deleteFile("viral-logo.webp"); } catch {}
+
+        for (
+            let i = 0;
+            i < 100;
+            i++
+        ) {
+
+            try {
+
+                await this.ffmpeg.deleteFile(
+                    "subtitle-" +
+                    i +
+                    ".png"
+                );
+
+            }
+            catch {}
 
         }
 
@@ -824,45 +1745,28 @@ window.ViralRenderer = {
     ) {
 
         if (!file) {
-
-            throw new Error(
-                "Missing file."
-            );
-
+            throw new Error("Missing media file.");
         }
 
-
-        if (
-            typeof FFmpegUtil !==
-            "undefined" &&
-            typeof FFmpegUtil.fetchFile ===
-            "function"
-        ) {
-
-            return FFmpegUtil.fetchFile(
-                file
-            );
-
+        if (typeof Blob !== "undefined" && file instanceof Blob) {
+            try {
+                const buffer = await file.arrayBuffer();
+                return new Uint8Array(buffer);
+            } catch (error) {
+                console.error("❌ Blob/File read failed:", error);
+                throw new Error("The selected media could not be read. Please choose the file again.");
+            }
         }
 
+        if (file instanceof Uint8Array) return file;
+        if (file instanceof ArrayBuffer) return new Uint8Array(file);
 
-        if (
-            file instanceof Blob
-        ) {
-
-            return new Uint8Array(
-                await file.arrayBuffer()
-            );
-
+        if (typeof FFmpegUtil !== "undefined" && typeof FFmpegUtil.fetchFile === "function") {
+            return await FFmpegUtil.fetchFile(file);
         }
 
-
-        throw new Error(
-            "Could not read media file."
-        );
-
+        throw new Error("Could not read media file.");
     },
-
 
     /*
     ========================================================
@@ -875,19 +1779,17 @@ window.ViralRenderer = {
     ) {
 
         const type =
-            blob &&
-            blob.type
-                ? blob.type
-                : "";
+            (
+                blob &&
+                blob.type
+                    ? blob.type
+                    : ""
+            ).toLowerCase();
 
 
         if (
-            type.includes(
-                "mpeg"
-            ) ||
-            type.includes(
-                "mp3"
-            )
+            type.includes("mpeg") ||
+            type.includes("mp3")
         ) {
 
             return ".mp3";
@@ -896,9 +1798,8 @@ window.ViralRenderer = {
 
 
         if (
-            type.includes(
-                "wav"
-            )
+            type.includes("wav") ||
+            type.includes("wave")
         ) {
 
             return ".wav";
@@ -907,9 +1808,8 @@ window.ViralRenderer = {
 
 
         if (
-            type.includes(
-                "ogg"
-            )
+            type.includes("ogg") ||
+            type.includes("opus")
         ) {
 
             return ".ogg";
@@ -918,12 +1818,9 @@ window.ViralRenderer = {
 
 
         if (
-            type.includes(
-                "mp4"
-            ) ||
-            type.includes(
-                "m4a"
-            )
+            type.includes("mp4") ||
+            type.includes("m4a") ||
+            type.includes("aac")
         ) {
 
             return ".m4a";
@@ -932,12 +1829,19 @@ window.ViralRenderer = {
 
 
         if (
-            type.includes(
-                "webm"
-            )
+            type.includes("webm")
         ) {
 
             return ".webm";
+
+        }
+
+
+        if (
+            type.includes("flac")
+        ) {
+
+            return ".flac";
 
         }
 
@@ -985,7 +1889,9 @@ window.ViralRenderer = {
             if (
                 !subtitle ||
                 !subtitle.text ||
-                !subtitle.text.trim()
+                !String(
+                    subtitle.text
+                ).trim()
             ) {
 
                 continue;
@@ -993,23 +1899,23 @@ window.ViralRenderer = {
             }
 
 
+            /*
+            ==================================================
+            CANVAS
+            ==================================================
+            */
+
             const canvas =
                 document.createElement(
                     "canvas"
                 );
 
 
-            /*
-            ------------------------------------------------
-            1080 x 1920 = standard 9:16
-            ------------------------------------------------
-            */
-
             canvas.width =
                 1080;
 
             canvas.height =
-                1920;
+                500;
 
 
             const ctx =
@@ -1018,24 +1924,33 @@ window.ViralRenderer = {
                 );
 
 
+            if (!ctx) {
+
+                throw new Error(
+                    "Could not create subtitle canvas."
+                );
+
+            }
+
+
             /*
-            ------------------------------------------------
+            ==================================================
             TRANSPARENT BACKGROUND
-            ------------------------------------------------
+            ==================================================
             */
 
             ctx.clearRect(
                 0,
                 0,
-                canvas.width,
-                canvas.height
+                1080,
+                1920
             );
 
 
             /*
-            ------------------------------------------------
-            STYLE
-            ------------------------------------------------
+            ==================================================
+            SETTINGS
+            ==================================================
             */
 
             const style =
@@ -1043,6 +1958,12 @@ window.ViralRenderer = {
                     "subtitleStyle"
                 )?.value ||
                 "clean";
+
+            const subtitlePosition =
+                document.getElementById("subtitlePosition")?.value || "bottom";
+
+            const subtitleColor =
+                document.getElementById("subtitleColor")?.value || "#ffffff";
 
 
             const size =
@@ -1061,6 +1982,12 @@ window.ViralRenderer = {
                 );
 
 
+            /*
+            ==================================================
+            FONT
+            ==================================================
+            */
+
             ctx.font =
                 "700 " +
                 fontSize +
@@ -1073,26 +2000,30 @@ window.ViralRenderer = {
             ctx.textAlign =
                 "center";
 
+
             ctx.textBaseline =
                 "middle";
 
 
             /*
-            ------------------------------------------------
-            WRAP TEXT
-            ------------------------------------------------
+            ==================================================
+            WRAP
+            ==================================================
             */
 
             const lines =
                 this.wrapText(
                     ctx,
-                    subtitle.text,
+                    String(
+                        subtitle.text
+                    ),
                     900
                 );
 
 
             const lineHeight =
-                fontSize * 1.25;
+                fontSize *
+                1.25;
 
 
             const totalHeight =
@@ -1101,24 +2032,24 @@ window.ViralRenderer = {
 
 
             /*
-            ------------------------------------------------
+            ==================================================
             POSITION
-            ------------------------------------------------
+            ==================================================
             */
 
-            const centerY =
-                1600;
+            let centerY = 250;
+            if (subtitlePosition === "top") centerY = 110;
+            else if (subtitlePosition === "middle") centerY = 960;
 
 
             /*
-            ------------------------------------------------
-            STYLE BACKGROUND
-            ------------------------------------------------
+            ==================================================
+            BACKGROUND
+            ==================================================
             */
 
             if (
-                style ===
-                "bold"
+                style === "bold"
             ) {
 
                 this.drawSubtitleBox(
@@ -1126,15 +2057,15 @@ window.ViralRenderer = {
                     lines,
                     centerY,
                     lineHeight,
-                    fontSize
+                    fontSize,
+                    false
                 );
 
             }
 
 
             if (
-                style ===
-                "story"
+                style === "story"
             ) {
 
                 this.drawSubtitleBox(
@@ -1150,19 +2081,21 @@ window.ViralRenderer = {
 
 
             /*
-            ------------------------------------------------
+            ==================================================
             TEXT
-            ------------------------------------------------
+            ==================================================
             */
 
             ctx.lineWidth =
                 12;
 
+
             ctx.strokeStyle =
                 "rgba(0,0,0,0.85)";
 
+
             ctx.fillStyle =
-                "#ffffff";
+                subtitleColor;
 
 
             lines.forEach(
@@ -1204,6 +2137,12 @@ window.ViralRenderer = {
             );
 
 
+            /*
+            ==================================================
+            CANVAS → PNG
+            ==================================================
+            */
+
             const blob =
                 await new Promise(
                     resolve => {
@@ -1219,7 +2158,9 @@ window.ViralRenderer = {
 
             if (!blob) {
 
-                continue;
+                throw new Error(
+                    "Could not create subtitle PNG."
+                );
 
             }
 
@@ -1238,26 +2179,73 @@ window.ViralRenderer = {
             );
 
 
+            /*
+            ==================================================
+            TIMING
+            ==================================================
+            */
+
+            let start =
+                Number(
+                    subtitle.start
+                );
+
+
+            let end =
+                Number(
+                    subtitle.end
+                );
+
+
+            if (
+                !Number.isFinite(start)
+            ) {
+
+                start = 0;
+
+            }
+
+
+            if (
+                !Number.isFinite(end)
+            ) {
+
+                end =
+                    duration;
+
+            }
+
+
+            start =
+                Math.max(
+                    0,
+                    Math.min(
+                        start,
+                        duration
+                    )
+                );
+
+
+            end =
+                Math.max(
+                    start,
+                    Math.min(
+                        end,
+                        duration
+                    )
+                );
+
+
             files.push({
 
                 filename:
                     filename,
 
                 start:
-                    Math.max(
-                        0,
-                        Number(
-                            subtitle.start
-                        ) || 0
-                    ),
+                    start,
 
                 end:
-                    Math.min(
-                        duration,
-                        Number(
-                            subtitle.end
-                        ) || duration
-                    )
+                    end
 
             });
 
@@ -1298,7 +2286,9 @@ window.ViralRenderer = {
 
         const top =
             centerY -
-            height / 2;
+            (
+                height / 2
+            );
 
 
         ctx.save();
@@ -1312,14 +2302,44 @@ window.ViralRenderer = {
 
         ctx.beginPath();
 
-        ctx.roundRect(
-            540 -
-                maxWidth / 2,
-            top,
-            maxWidth,
-            height,
-            30
-        );
+
+        /*
+        ----------------------------------------------------
+        roundRect may not exist in some older browsers.
+        ----------------------------------------------------
+        */
+
+        if (
+            typeof ctx.roundRect ===
+                "function"
+        ) {
+
+            ctx.roundRect(
+                540 -
+                    (
+                        maxWidth / 2
+                    ),
+                top,
+                maxWidth,
+                height,
+                30
+            );
+
+        }
+        else {
+
+            ctx.rect(
+                540 -
+                    (
+                        maxWidth / 2
+                    ),
+                top,
+                maxWidth,
+                height
+            );
+
+        }
+
 
         ctx.fill();
 
@@ -1342,11 +2362,15 @@ window.ViralRenderer = {
     ) {
 
         const words =
-            String(text)
-                .split(/\s+/);
+            String(
+                text
+            ).split(
+                /\s+/
+            );
 
 
         const lines = [];
+
 
         let current =
             "";
@@ -1370,7 +2394,9 @@ window.ViralRenderer = {
                     maxWidth
                 ) {
 
-                    if (current) {
+                    if (
+                        current
+                    ) {
 
                         lines.push(
                             current
@@ -1378,11 +2404,11 @@ window.ViralRenderer = {
 
                     }
 
+
                     current =
                         word;
 
                 }
-
                 else {
 
                     current =
@@ -1394,7 +2420,9 @@ window.ViralRenderer = {
         );
 
 
-        if (current) {
+        if (
+            current
+        ) {
 
             lines.push(
                 current
@@ -1414,18 +2442,76 @@ window.ViralRenderer = {
     ========================================================
     */
 
+    /*
+    ========================================================
+    CHARACTER VOICE FILTERS
+    ========================================================
+
+    One approved recording is split using subtitle timings.
+    Each segment receives a local FFmpeg voice style, then
+    the pieces are joined back into one narration track.
+    ========================================================
+    */
+
+    buildCharacterVoiceFilter: function (subtitles, duration, masterVolume) {
+
+        const items = Array.isArray(subtitles) && subtitles.length
+            ? subtitles
+            : [{ start: 0, end: duration, voiceProfile: "narrator" }];
+
+        const graphs = [];
+        const labels = [];
+
+        const profiles = {
+            narrator: { pitch: 1.00, volume: 1.00 },
+            deep:     { pitch: 0.82, volume: 1.05 },
+            child:    { pitch: 1.35, volume: 0.95 },
+            high:     { pitch: 1.22, volume: 1.00 },
+            old:      { pitch: 0.90, volume: 0.90 },
+            robot:    { pitch: 1.00, volume: 0.95, extra: "aecho=0.8:0.88:55:0.28" },
+            echo:     { pitch: 1.00, volume: 0.95, extra: "aecho=0.8:0.82:180:0.35" },
+            funny:    { pitch: 1.16, volume: 1.00 },
+            strong:   { pitch: 0.88, volume: 1.10 },
+            soft:     { pitch: 1.04, volume: 0.48, extra: "highpass=180" }
+        };
+
+        items.forEach((item, index) => {
+            const start = Math.max(0, Number(item.start) || 0);
+            const end = Math.min(Number(duration) || 0.1, Math.max(start + 0.01, Number(item.end) || start + 0.01));
+            const p = profiles[item.voiceProfile] || profiles.narrator;
+            const pitch = p.pitch;
+            const restoreTempo = (1 / pitch).toFixed(5);
+            const label = "[cv" + index + "]";
+            let chain = "[1:a]atrim=start=" + this.escapeFilterNumber(start) + ":end=" + this.escapeFilterNumber(end) + ",asetpts=PTS-STARTPTS";
+
+            if (Math.abs(pitch - 1) > 0.001) {
+                chain += ",asetrate=44100*" + pitch.toFixed(4) + ",aresample=44100,atempo=" + restoreTempo;
+            }
+
+            if (p.extra) chain += "," + p.extra;
+            chain += ",volume=" + p.volume.toFixed(3) + label + ";";
+            graphs.push(chain);
+            labels.push(label);
+        });
+
+        let out = ";" + graphs.join("");
+        if (labels.length === 1) {
+            out += labels[0] + "volume=" + Math.max(0, Number(masterVolume) || 1).toFixed(3) + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
+        } else {
+            out += labels.join("") + "concat=n=" + labels.length + ":v=0:a=1,volume=" + Math.max(0, Number(masterVolume) || 1).toFixed(3) + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
+        }
+
+        return out;
+    },
+
     buildFilterGraph: async function (
         subtitles,
         subtitleFiles,
-        duration
+        duration,
+        smartCrop = null,
+        logoInputName = null,
+        outputAspectRatio = "9:16"
     ) {
-
-        /*
-        ----------------------------------------------------
-        The actual filter graph is assembled later by
-        buildFFmpegArguments().
-        ----------------------------------------------------
-        */
 
         return {
 
@@ -1436,7 +2522,17 @@ window.ViralRenderer = {
                 subtitleFiles,
 
             duration:
-                duration
+                duration,
+
+            smartCrop: smartCrop,
+            logoInputName: logoInputName,
+            outputAspectRatio: outputAspectRatio === "16:9" ? "16:9" : "9:16",
+
+            audioMode: window.ViralProject?.audioMode || "narration",
+            narrationVolume: Number(window.ViralProject?.narrationVolume) || 1,
+            originalVolume: Number(window.ViralProject?.originalVolume) || 0.35,
+            backgroundMusicVolume: Number(window.ViralProject?.backgroundMusicVolume) || 0.20,
+            musicInputName: null
 
         };
 
@@ -1450,262 +2546,488 @@ window.ViralRenderer = {
     */
 
     buildFFmpegArguments: function (
-        selection,
-        voiceExtension,
-        subtitleFiles,
-        filterData
-    ) {
+    selection,
+    voiceInputName,
+    subtitleFiles,
+    filterData,
+    logoInputName = null
+) {
 
-        const args = [];
+    const args = [];
+
+    const audioMode = filterData?.audioMode || "narration";
+    const needsNarration = audioMode === "narration" || audioMode === "original_narration";
+    const narrationVolume = Math.max(0, Number(filterData?.narrationVolume) || 1);
+    const originalVolume = Math.max(0, Number(filterData?.originalVolume) || 0.35);
+    const musicInputName = filterData?.musicInputName || null;
+    const musicVolume = Math.max(0, Number(filterData?.backgroundMusicVolume) || 0.20);
+
+    /*
+    ========================================================
+    VIDEO INPUT
+    ========================================================
+    */
+
+    const start =
+        Math.max(
+            0,
+            Number(selection.start) || 0
+        );
+
+    const duration =
+        Math.max(
+            0.1,
+            Number(selection.duration) || 0.1
+        );
+
+    args.push(
+        "-ss",
+        String(start),
+
+        "-t",
+        String(duration),
+
+        "-i",
+        this.videoInputName
+    );
 
 
-        /*
-        ====================================================
-        INPUT VIDEO
-        ====================================================
-        */
+    /*
+    ========================================================
+    VOICE INPUT
+    ========================================================
+    */
 
-        args.push(
-            "-ss",
-            String(
+    if (needsNarration) {
+        args.push("-i", voiceInputName);
+    }
+
+    let subtitleInputStart = needsNarration ? 2 : 1;
+
+    if (musicInputName) {
+        args.push("-i", musicInputName);
+        subtitleInputStart += 1;
+    }
+
+    if (logoInputName) {
+        args.push("-loop", "1", "-i", logoInputName);
+        subtitleInputStart += 1;
+    }
+
+
+    /*
+    ========================================================
+    SUBTITLE INPUTS
+    ========================================================
+    */
+
+    subtitleFiles.forEach(
+        file => {
+
+            const subtitleDuration =
                 Math.max(
-                    0,
-                    selection.start
-                )
-            ),
-
-            "-t",
-            String(
-                selection.duration
-            ),
-
-            "-i",
-            "input-video"
-        );
-
-
-        /*
-        ====================================================
-        INPUT VOICE
-        ====================================================
-        */
-
-        args.push(
-            "-i",
-            "voice" +
-            voiceExtension
-        );
-
-
-        /*
-        ====================================================
-        INPUT SUBTITLE PNGS
-        ====================================================
-        */
-
-        subtitleFiles.forEach(
-            file => {
-
-                args.push(
-                    "-loop",
-                    "1",
-                    "-i",
-                    file.filename
+                    0.1,
+                    Number(
+                        file.end - file.start
+                    ) || 0.1
                 );
 
-            }
-        );
+            args.push(
+                "-loop",
+                "1",
+
+                "-t",
+                String(subtitleDuration),
+
+                "-i",
+                file.filename
+            );
+
+        }
+    );
 
 
-        /*
-        ====================================================
-        VIDEO FILTER
-        ====================================================
+    /*
+    ========================================================
+    FILTER GRAPH
+    ========================================================
 
-        Crop the original video to the central 9:16 area.
+    Convert original video to exactly:
 
-        Example:
+        1080 x 1920
 
-        1920x1080
-             ↓
-        crop 607x1080
-             ↓
-        scale 1080x1920
-        ====================================================
-        */
+    No pad filter is used.
 
-        let filter =
+    This works for landscape and portrait video.
+    ========================================================
+    */
+
+    let filter;
+
+    const renderAspect = filterData?.outputAspectRatio === "16:9" ? "16:9" : "9:16";
+
+    /*
+    --------------------------------------------------------
+    OUTPUT FORMAT
+    --------------------------------------------------------
+    9:16: Smart Crop when available, then 1080x1920.
+    16:9: centered fill crop, then 1920x1080.
+    --------------------------------------------------------
+    */
+
+    if (renderAspect === "16:9") {
+
+        filter =
             "[0:v]" +
-            "crop=" +
-            "ih*9/16:ih," +
-            "scale=1080:1920:force_original_aspect_ratio=decrease," +
-            "pad=1080:1920:(ow-iw)/2:(oh-ih)/2" +
-            "[base]";
+            "scale=1920:1080:" +
+            "force_original_aspect_ratio=increase," +
+            "crop=1920:1080," +
+            "setsar=1" +
+            "[base];";
 
-
-        let last =
-            "[base]";
-
-
-        /*
-        ====================================================
-        OVERLAY SUBTITLES
-        ====================================================
-        */
-
-        subtitleFiles.forEach(
-            (
-                file,
-                index
-            ) => {
-
-                const input =
-                    "[" +
-                    (
-                        index + 2
-                    ) +
-                    ":v]";
-
-
-                const output =
-                    "[v" +
-                    index +
-                    "]";
-
-
-                filter +=
-                    input +
-                    "format=rgba" +
-                    "[sub" +
-                    index +
-                    "];" +
-                    last +
-                    "[sub" +
-                    index +
-                    "]" +
-                    "overlay=0:0:" +
-                    "enable='between(t," +
-                    file.start +
-                    "," +
-                    file.end +
-                    ")'" +
-                    output +
-                    ";";
-
-
-                last =
-                    output;
-
-            }
+        console.log(
+            "🖥️ FINAL RENDER: YouTube 16:9 center-crop"
         );
 
+    } else if (
+        crop &&
+        Number.isFinite(Number(crop.x)) &&
+        Number.isFinite(Number(crop.y)) &&
+        Number.isFinite(Number(crop.width)) &&
+        Number.isFinite(Number(crop.height)) &&
+        Number(crop.width) > 0 &&
+        Number(crop.height) > 0 &&
+        Number(crop.x) >= 0 &&
+        Number(crop.y) >= 0 &&
+        (!sourceWidth || Number(crop.x) + Number(crop.width) <= sourceWidth + 1) &&
+        (!sourceHeight || Number(crop.y) + Number(crop.height) <= sourceHeight + 1)
+    ) {
 
-        /*
-        ====================================================
-        FINAL VIDEO FORMAT
-        ====================================================
-        */
+        const x = Math.max(0, Math.floor(Number(crop.x)));
+        const y = Math.max(0, Math.floor(Number(crop.y)));
+        const w = Math.max(2, Math.floor(Number(crop.width) / 2) * 2);
+        const h = Math.max(2, Math.floor(Number(crop.height) / 2) * 2);
 
-        filter +=
-            last +
-            "format=yuv420p" +
-            "[vout]";
+        filter =
+            "[0:v]" +
+            "crop=" + w + ":" + h + ":" + x + ":" + y + "," +
+            "scale=1080:1920," +
+            "setsar=1" +
+            "[base];";
 
-
-        /*
-        ====================================================
-        AUDIO
-        ====================================================
-
-        Trim/pad the narration to the scene duration.
-        ====================================================
-        */
-
-        filter +=
-            ";[1:a]" +
-            "apad=" +
-            "pad_dur=" +
-            selection.duration +
-            "," +
-            "atrim=0:" +
-            selection.duration +
-            "[aout]";
-
-
-        args.push(
-            "-filter_complex",
-            filter
+        console.log(
+            "✂️ FINAL SMART CROP:",
+            { x, y, width: w, height: h }
         );
 
+    } else {
 
-        /*
-        ====================================================
-        MAP
-        ====================================================
-        */
+        filter =
+            "[0:v]" +
+            "scale=1080:1920:" +
+            "force_original_aspect_ratio=increase," +
+            "crop=1080:1920," +
+            "setsar=1" +
+            "[base];";
 
-        args.push(
-            "-map",
-            "[vout]",
-
-            "-map",
-            "[aout]"
+        console.log(
+            "✂️ FINAL RENDER: 9:16 center-crop fallback"
         );
 
+    }
 
-        /*
-        ====================================================
-        VIDEO ENCODER
-        ====================================================
-        */
 
-        args.push(
-            "-c:v",
-            "libx264",
+    /*
+    ========================================================
+    OPTIONAL LOGO / WATERMARK
+    ========================================================
+    */
 
-            "-preset",
-            "veryfast",
+    let last =
+        "[base]";
 
-            "-crf",
-            "23"
+    if (logoInputName) {
+
+        const logoIndex = subtitleInputStart - 1;
+        const position = window.ViralProject?.logoPosition || "top-right";
+        const sizePct = Math.max(8, Math.min(35, Number(window.ViralProject?.logoSize) || 18));
+        const opacity = Math.max(0.2, Math.min(1, Number(window.ViralProject?.logoOpacity) || 0.85));
+        const logoWidth = Math.round(1080 * sizePct / 100);
+        let x = "W-w-36";
+        let y = "36";
+        if (position === "top-left") { x = "36"; y = "36"; }
+        else if (position === "bottom-left") { x = "36"; y = "H-h-36"; }
+        else if (position === "bottom-right") { x = "W-w-36"; y = "H-h-36"; }
+
+        filter += "[" + logoIndex + ":v]format=rgba,colorchannelmixer=aa=" + opacity + ",scale=" + logoWidth + ":-1[logo];";
+        filter += last + "[logo]overlay=" + x + ":" + y + ":shortest=1[vlogo];";
+        last = "[vlogo]";
+    }
+
+
+    /*
+    ========================================================
+    SUBTITLE OVERLAYS
+    ========================================================
+    */
+
+
+    subtitleFiles.forEach(
+        (
+            file,
+            index
+        ) => {
+
+            const inputIndex = index + subtitleInputStart;
+
+            const input =
+                "[" +
+                inputIndex +
+                ":v]";
+
+            const subtitleLabel =
+                "[sub" +
+                index +
+                "]";
+
+            const outputLabel =
+                "[v" +
+                index +
+                "]";
+
+
+            /*
+            ------------------------------------------------
+            Prepare subtitle image.
+            ------------------------------------------------
+            */
+
+            filter +=
+                input +
+                "format=rgba" +
+                subtitleLabel +
+                ";";
+
+
+            /*
+            ------------------------------------------------
+            Overlay subtitle.
+            ------------------------------------------------
+            */
+
+            filter +=
+                last +
+                subtitleLabel +
+                "overlay=0:(H-h):" +
+                "enable='between(t," +
+                this.escapeFilterNumber(
+                    file.start
+                ) +
+                "," +
+                this.escapeFilterNumber(
+                    file.end
+                ) +
+                ")'" +
+                outputLabel +
+                ";";
+
+
+            last =
+                outputLabel;
+
+        }
+    );
+
+
+    /*
+    ========================================================
+    FINAL VIDEO
+    ========================================================
+    */
+
+    filter +=
+        last +
+        "format=yuv420p" +
+        "[vout]";
+
+
+    /*
+    ========================================================
+    AUDIO
+    ========================================================
+    */
+
+    const audioLabels = [];
+
+    if (audioMode === "narration" || audioMode === "original_narration") {
+        const characterAudio = this.buildCharacterVoiceFilter(
+            filterData?.subtitles || [],
+            duration,
+            narrationVolume
         );
+        // Give the character-processed narration a unique label so it can
+        // safely be mixed with original sound and/or background music.
+        filter += characterAudio.replace(/\[aout\]\s*$/, "[narration]");
+        audioLabels.push("[narration]");
+    }
+
+    if (audioMode === "original" || audioMode === "original_narration") {
+        filter += ";[0:a]volume=" + originalVolume + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[orig]";
+        audioLabels.push("[orig]");
+    }
+
+    if (musicInputName) {
+        const musicIndex = needsNarration ? 2 : 1;
+        filter += ";[" + musicIndex + ":a]volume=" + musicVolume + ",aresample=async=1,aloop=loop=-1:size=2e+09,atrim=duration=" + this.escapeFilterNumber(duration) + "[music]";
+        audioLabels.push("[music]");
+    }
+
+    if (audioLabels.length === 1) {
+        filter += ";" + audioLabels[0] + "aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
+    } else if (audioLabels.length > 1) {
+        filter += ";" + audioLabels.join("") + "amix=inputs=" + audioLabels.length + ":duration=longest:dropout_transition=0,atrim=duration=" + this.escapeFilterNumber(duration) + ",aresample=async=1[aout]";
+    }
 
 
-        /*
-        ====================================================
-        AUDIO ENCODER
-        ====================================================
-        */
+    /*
+    ========================================================
+    FILTER COMPLEX
+    ========================================================
+    */
 
-        args.push(
-            "-c:a",
-            "aac",
+    args.push(
+        "-filter_complex",
+        filter
+    );
 
-            "-b:a",
-            "128k"
+
+    /*
+    ========================================================
+    MAP VIDEO + AUDIO
+    ========================================================
+    */
+
+    args.push("-map", "[vout]");
+
+    args.push("-map", "[aout]");
+
+
+    /*
+    ========================================================
+    VIDEO ENCODER
+    ========================================================
+    */
+
+    args.push(
+        "-c:v",
+        "libx264",
+
+        "-preset",
+        "veryfast",
+
+        "-crf",
+        "23",
+
+        "-pix_fmt",
+        "yuv420p"
+    );
+
+
+    /*
+    ========================================================
+    AUDIO ENCODER
+    ========================================================
+    */
+
+    args.push(
+        "-c:a",
+        "aac",
+
+        "-b:a",
+        "128k",
+
+        "-ar",
+        "44100"
+    );
+
+
+    /*
+    ========================================================
+    OUTPUT
+    ========================================================
+    */
+
+    args.push(
+        "-t",
+        String(duration),
+
+        "-movflags",
+        "+faststart",
+
+        "-y",
+
+        "viral-final.mp4"
+    );
+
+
+    /*
+    ========================================================
+    DEBUG
+    ========================================================
+    */
+
+    console.log(
+        "================================================"
+    );
+
+    console.log(
+        "🔥 FINAL FILTER GRAPH:"
+    );
+
+    console.log(
+        filter
+    );
+
+    console.log(
+        "================================================"
+    );
+
+
+    return args;
+
+},
+
+
+    /*
+    ========================================================
+    ESCAPE FILTER NUMBER
+    ========================================================
+    */
+
+    escapeFilterNumber: function (
+        value
+    ) {
+
+        const number =
+            Number(
+                value
+            );
+
+
+        if (
+            !Number.isFinite(
+                number
+            )
+        ) {
+
+            return "0";
+
+        }
+
+
+        return number.toFixed(
+            3
         );
-
-
-        /*
-        ====================================================
-        OUTPUT
-        ====================================================
-        */
-
-        args.push(
-            "-movflags",
-            "+faststart",
-
-            "-t",
-            String(
-                selection.duration
-            ),
-
-            "viral-final.mp4"
-        );
-
-
-        return args;
 
     },
 
@@ -1731,11 +3053,25 @@ window.ViralRenderer = {
         }
 
 
-        const url =
-            this.finalVideoUrl ||
-            URL.createObjectURL(
-                this.finalVideoBlob
-            );
+        let url =
+            this.finalVideoUrl;
+
+
+        let temporary =
+            false;
+
+
+        if (!url) {
+
+            url =
+                URL.createObjectURL(
+                    this.finalVideoBlob
+                );
+
+            temporary =
+                true;
+
+        }
 
 
         const link =
@@ -1763,8 +3099,31 @@ window.ViralRenderer = {
         link.remove();
 
 
+        if (
+            temporary
+        ) {
+
+            setTimeout(
+                () => {
+
+                    try {
+
+                        URL.revokeObjectURL(
+                            url
+                        );
+
+                    }
+                    catch {}
+
+                },
+                1000
+            );
+
+        }
+
+
         console.log(
-            "⬇️ MP4 DOWNLOAD STARTED"
+            "⬇️ FINAL MP4 DOWNLOAD STARTED"
         );
 
     },
@@ -1807,11 +3166,23 @@ window.ViralRenderer = {
         }
 
 
+        const safePercent =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    Number(
+                        percent
+                    ) || 0
+                )
+            );
+
+
         if (progress) {
 
             progress.value =
                 Math.round(
-                    percent
+                    safePercent
                 );
 
         }
@@ -1821,16 +3192,20 @@ window.ViralRenderer = {
 
             text.textContent =
                 Math.round(
-                    percent
+                    safePercent
                 ) +
                 "%";
 
         }
 
 
-        this.setStatus(
-            message
-        );
+        if (message) {
+
+            this.setStatus(
+                message
+            );
+
+        }
 
     },
 
@@ -1863,6 +3238,66 @@ window.ViralRenderer = {
             message
         );
 
+    },
+
+
+    /*
+    ========================================================
+    FORMAT BYTES
+    ========================================================
+    */
+
+    formatBytes: function (
+        bytes
+    ) {
+
+        if (
+            !Number.isFinite(
+                bytes
+            ) ||
+            bytes <= 0
+        ) {
+
+            return "0 B";
+
+        }
+
+
+        const units = [
+            "B",
+            "KB",
+            "MB",
+            "GB"
+        ];
+
+
+        const index =
+            Math.min(
+                Math.floor(
+                    Math.log(bytes) /
+                    Math.log(1024)
+                ),
+                units.length - 1
+            );
+
+
+        return (
+            (
+                bytes /
+                Math.pow(
+                    1024,
+                    index
+                )
+            ).toFixed(
+                index === 0
+                    ? 0
+                    : 2
+            )
+            +
+            " " +
+            units[index]
+        );
+
     }
 
 };
@@ -1874,11 +3309,23 @@ START
 ============================================================
 */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+if (
+    document.readyState ===
+    "loading"
+) {
 
-        ViralRenderer.init();
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
 
-    }
-);
+            ViralRenderer.init();
+
+        }
+    );
+
+}
+else {
+
+    ViralRenderer.init();
+
+}

@@ -256,35 +256,30 @@ window.ViralVoice = {
         }
 
 
-        this.currentAudioBlob =
-            file;
+        // Immediately copy the selected File into a fresh Blob.
+        // Android/Acode WebView can invalidate the original file
+        // reference later, so the renderer must never depend on it.
+        file.arrayBuffer()
+            .then(buffer => {
+                this.currentAudioBlob = new Blob(
+                    [buffer],
+                    { type: file.type || "audio/webm" }
+                );
 
+                this.createPreview(this.currentAudioBlob);
 
-        this.createPreview(
-            file
-        );
+                const fileName = document.getElementById("voiceFileName");
+                if (fileName) fileName.textContent = "📁 " + file.name;
 
+                this.enableApproval();
+                this.setStatus("✅ Narration loaded and copied safely.");
+            })
+            .catch(error => {
+                console.error("❌ Could not copy narration file:", error);
+                this.setStatus("❌ Could not read the narration file. Please choose it again.");
+            });
 
-        const fileName =
-            document.getElementById(
-                "voiceFileName"
-            );
-
-
-        if (fileName) {
-
-            fileName.textContent =
-                "📁 " + file.name;
-
-        }
-
-
-        this.enableApproval();
-
-
-        this.setStatus(
-            "✅ Narration loaded."
-        );
+        return;
 
     },
 
@@ -1002,8 +997,11 @@ window.ViralVoice = {
             window.ViralProject || {};
 
 
-        ViralProject.voiceBlob =
-            this.currentAudioBlob;
+        // Keep an independent in-memory copy for the renderer.
+        ViralProject.voiceBlob = new Blob(
+            [this.currentAudioBlob],
+            { type: this.currentAudioBlob.type || "audio/webm" }
+        );
 
 
         ViralProject.voiceApproved =

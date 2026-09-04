@@ -523,6 +523,7 @@ window.ViralSubtitles = {
 
         this.subtitles.forEach(
             subtitle => {
+                subtitle.voiceProfile = subtitle.voiceProfile || (window.ViralProject?.defaultCharacterVoice || "narrator");
 
                 const row =
                     document.createElement(
@@ -547,6 +548,10 @@ window.ViralSubtitles = {
                         data-id="${subtitle.id}"
                         rows="2"
                     >${this.escapeHtml(subtitle.text)}</textarea>
+
+                    <select class="subtitle-voice" data-id="${subtitle.id}" style="margin-top:8px;width:100%;">
+                        ${this.voiceOptions(subtitle.voiceProfile)}
+                    </select>
 
                 `;
 
@@ -656,6 +661,25 @@ if (item) {
     },
 
 
+
+    voiceOptions: function (selected) {
+
+        const value = selected || "narrator";
+        const options = [
+            ["narrator", "🎙️ Narrator — natural"],
+            ["deep", "🧔 Deep — low / strong"],
+            ["child", "👦 Child — high / playful"],
+            ["high", "🐦 High — bright"],
+            ["old", "👴 Old — low / gentle"],
+            ["robot", "🤖 Robot — electronic"],
+            ["echo", "👻 Echo — dramatic"],
+            ["funny", "😂 Funny — comic"],
+            ["strong", "😠 Strong — powerful"],
+            ["soft", "😌 Soft — quiet"]
+        ];
+        return options.map(([id,label]) => `<option value="${id}" ${id === value ? "selected" : ""}>${label}</option>`).join("");
+    },
+
     /*
     ========================================================
     APPROVE
@@ -702,6 +726,13 @@ if (item) {
             }
         );
 
+
+        const voiceFields = document.querySelectorAll(".subtitle-voice");
+        voiceFields.forEach(field => {
+            const id = Number(field.dataset.id);
+            const subtitle = this.subtitles.find(item => item.id === id);
+            if (subtitle) subtitle.voiceProfile = field.value || "narrator";
+        });
 
         this.approved =
             true;

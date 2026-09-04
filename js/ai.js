@@ -193,7 +193,61 @@ window.ViralAI = {
 
             /*
             =================================================
-            SEND TO VISION AI
+            SHOW FRAMES IN THE STUDIO
+            =================================================
+            */
+
+            const gallery =
+                document.getElementById("sceneFramesGallery");
+
+            const frameStatus =
+                document.getElementById("sceneFramesStatus");
+
+            if (gallery) {
+
+                gallery.innerHTML = "";
+
+                frames.forEach((frame, index) => {
+
+                    const card =
+                        document.createElement("div");
+
+                    card.style.cssText =
+                        "border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff;";
+
+                    const img =
+                        document.createElement("img");
+
+                    img.src = frame.image;
+                    img.alt = "Scene frame " + (index + 1);
+                    img.style.cssText =
+                        "display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;";
+
+                    const caption =
+                        document.createElement("div");
+
+                    caption.textContent =
+                        "Frame " + (index + 1) + " • " + frame.time + "s";
+                    caption.style.cssText =
+                        "padding:7px;font-size:12px;text-align:center;";
+
+                    card.appendChild(img);
+                    card.appendChild(caption);
+                    gallery.appendChild(card);
+
+                });
+
+            }
+
+            if (frameStatus) {
+                frameStatus.textContent =
+                    "✅ " + frames.length + " representative frames ready for scene analysis.";
+            }
+
+
+            /*
+            =================================================
+            SEND TO VISION AI (OPTIONAL)
             =================================================
             */
 
@@ -209,97 +263,119 @@ window.ViralAI = {
             );
 
 
-            const response =
-                await fetch(
-                    "/api/analyze",
-                    {
+            const API_URL =
+    "https://viral-studio-zeta.vercel.app/api/analyze";
 
-                        method:
-                            "POST",
+console.log(
+    "📡 Sending frames to VIRAL Vercel API..."
+);
 
-                        headers: {
+const response =
+    await fetch(
+        API_URL,
+        {
+            method: "POST",
 
-                            "Content-Type":
-                                "application/json"
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
 
-                        },
-
-                        body:
-                            JSON.stringify({
-
-                                frames:
-                                    frames
-
-                            })
-
-                    }
-                );
-
-
-            console.log(
-                "📡 API STATUS:",
-                response.status
-            );
+            body:
+                JSON.stringify({
+                    frames: frames
+                })
+        }
+    );
 
 
-            /*
-            =================================================
-            READ RESPONSE
-            =================================================
-            */
-
-            const data =
-                await response.json();
+console.log(
+    "📡 API STATUS:",
+    response.status
+);
 
 
-            console.log(
-                "🤖 API RESPONSE:",
-                data
-            );
+/*
+=================================================
+READ RESPONSE SAFELY
+=================================================
+*/
+
+const responseText =
+    await response.text();
+
+console.log(
+    "📡 API RESPONSE:",
+    responseText
+);
 
 
-            /*
-            =================================================
-            SERVER ERROR
-            =================================================
-            */
+let data;
 
-            if (!response.ok) {
+try {
 
-                throw new Error(
+    data =
+        JSON.parse(
+            responseText
+        );
 
-                    data.error ||
-                    (
-                        "API request failed. HTTP "
-                        + response.status
-                    )
+}
+catch (error) {
 
-                );
+    console.error(
+        "❌ API returned non-JSON:",
+        responseText
+    );
 
-            }
+    throw new Error(
+        "Vercel API returned an invalid response."
+    );
 
-
-            if (
-                !data.success
-            ) {
-
-                throw new Error(
-                    data.error ||
-                    "AI analysis failed."
-                );
-
-            }
+}
 
 
-            if (
-                !data.analysis
-            ) {
+/*
+=================================================
+HANDLE API ERROR
+=================================================
+*/
 
-                throw new Error(
-                    "AI returned no analysis."
-                );
+if (!response.ok) {
 
-            }
+    throw new Error(
+        data?.error ||
+        (
+            "API request failed. HTTP " +
+            response.status
+        )
+    );
+
+}
+
+
+if (!data.success) {
+
+    throw new Error(
+        data?.error ||
+        "AI analysis failed."
+    );
+
+}
+
+
+if (!data.analysis) {
+
+    throw new Error(
+        "AI returned no scene analysis."
+    );
+
+}
+
+
+console.log(
+    "✅ VIRAL AI analysis received:",
+    data.analysis
+);
 
 
             /*
