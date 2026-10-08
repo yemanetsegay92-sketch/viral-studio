@@ -90,7 +90,7 @@
     </div>
 
     <div class="tagline">
-        AI Amharic Short Studio
+        Amharic · Tigrinya Video Studio
     </div>
 
 </header>
@@ -98,6 +98,20 @@
 
 
 <main class="studio">
+<section class="panel editor-home">
+  <h2>Your video project</h2>
+  <label for="editorMode">What do you want to do?</label>
+  <select id="editorMode"><option value="subtitles">Add subtitles only — keep original sound</option><option value="narration">Add narration and subtitles</option></select>
+  <p id="modeHelp">Upload your finished video, paste the captions, adjust their timing, and export.</p>
+  <div class="draft-controls">
+    <label for="draftName">Project name</label><input id="draftName" placeholder="My video" maxlength="100">
+    <button id="saveDraftBtn" type="button" class="secondary-btn">Save draft</button>
+    <button id="newDraftBtn" type="button" class="small-btn">New project</button>
+    <label for="draftSelect">Saved drafts</label><select id="draftSelect"><option value="">Choose a draft</option></select>
+    <button id="loadDraftBtn" type="button" class="small-btn">Open draft</button>
+  </div>
+  <p id="draftStatus" role="status" aria-live="polite">Drafts are saved in this browser on this device. Keep using the same browser to reopen them.</p>
+</section>
 
 
 <!-- =========================================================
@@ -162,6 +176,7 @@
             controls
             playsinline
         ></video>
+        <div id="captionOverlay" aria-live="off" hidden></div>
 
 
         <div
@@ -259,7 +274,7 @@
         class="primary-btn"
         type="button"
     >
-        🎞️ Analyze Scene
+        🎞️ Extract Scene Frames
     </button>
 
 
@@ -272,28 +287,6 @@
     <!-- =====================================================
          LOCAL TEST MODE
     ====================================================== -->
-
-    <div class="test-mode-card">
-
-        <h3>
-            🧪 No-API Test Mode
-        </h3>
-
-        <p>
-            Test the complete video, story, audio,
-            subtitle and final rendering pipeline
-            without using an AI API.
-        </p>
-
-        <button
-            id="startTestBtn"
-            class="test-btn"
-            type="button"
-        >
-            🚀 Start Full Local Test
-        </button>
-
-    </div>
 
 </section>
 
@@ -396,7 +389,7 @@
             class="secondary-btn"
             type="button"
         >
-            🇪🇹 Generate Amharic Story
+            ✏️ Write narration
         </button>
 
     </div>
@@ -420,19 +413,18 @@
     </div>
 
     <h2>
-        🇪🇹 Amharic Story
+        <span id="storyHeading">Caption text</span>
     </h2>
 
     <p>
-        Turn the scene into an engaging
-        Amharic narration.
+        <span id="storyHelp">Paste captions here, one caption per line. Amharic, Tigrinya, and other languages are supported.</span>
     </p>
 
 
     <textarea
         id="amharicStory"
         rows="8"
-        placeholder="Your Amharic story will appear here..."
+        placeholder="Write or paste your text here…"
     ></textarea>
 
 
@@ -455,7 +447,7 @@
             class="primary-btn"
             type="button"
         >
-            ✅ Approve Story
+            Continue with text
         </button>
 
     </div>
@@ -875,12 +867,11 @@
     </div>
 
     <h2>
-        📝 Amharic Subtitles
+        📝 Subtitle timing
     </h2>
 
     <p>
-        Create subtitles from your approved
-        Amharic narration.
+        Times are in seconds from the start of your selected scene. Listen to the video or narration and adjust each caption.
     </p>
 
 
@@ -943,10 +934,18 @@
         id="subtitlePreview"
         class="subtitle-preview"
     >
-        Your Amharic subtitles will appear here.
+        Your captions appear over the video during playback.
     </div>
 
 
+    <div class="caption-actions">
+      <button id="addCaptionBtn" type="button" class="small-btn">+ Add caption</button>
+      <button id="previewSceneBtn" type="button" class="small-btn">▶ Preview scene</button>
+      <button id="importSrtBtn" type="button" class="small-btn">Import SRT</button>
+      <button id="exportSrtBtn" type="button" class="small-btn">Download SRT</button>
+      <input id="srtInput" type="file" accept=".srt,text/plain" hidden>
+    </div>
+    <p id="captionClock">Scene time: 0.00 s</p>
     <div
         id="subtitleList"
         class="subtitle-list"
@@ -959,7 +958,7 @@
         type="button"
         style="margin-top:14px;"
     >
-        📝 Generate Subtitles
+        📝 Create timing from text
     </button>
 
 
@@ -1004,8 +1003,7 @@
 
 
     <p>
-        Combine your video, Amharic voice,
-        and subtitles into the final short.
+        Export your video with the captions and audio you selected.
     </p>
 
 
@@ -1014,13 +1012,18 @@
             📐 Output format
         </label>
         <select id="outputAspectRatio" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;">
-            <option value="9:16">TikTok / Shorts — 9:16 (1080×1920)</option>
-            <option value="16:9">YouTube — 16:9 (1920×1080)</option>
+            <option value="source" selected>Keep original video shape</option><option value="9:16">TikTok / Shorts — 9:16</option>
+            <option value="16:9">YouTube — 16:9</option>
         </select>
         <p id="outputAspectHelp" style="margin:8px 0 0;opacity:.8;">Vertical format with Smart Crop.</p>
     </div>
 
 
+    <div class="result-card">
+      <label for="exportQuality">Export quality</label>
+      <select id="exportQuality"><option value="fast">Fast — 720p, smaller file</option><option value="high">High quality — 1080p</option></select>
+      <p id="qualityHelp">Fast export uses fewer pixels and a quicker encoder. High quality takes longer.</p>
+    </div>
     <div class="render-info">
 
         <div class="result-card">
@@ -1056,7 +1059,7 @@
             </label>
 
             <p>
-                🆓 FREE TEST
+                Free local export
             </p>
 
         </div>
@@ -1067,13 +1070,12 @@
     <div class="render-test-note">
 
         <strong>
-            Local render test
+            Export on your device
         </strong>
 
         <br>
 
-        This uses your selected video scene,
-        narration and Amharic subtitles.
+        Keep this page open until your MP4 is ready.
 
     </div>
 
@@ -1088,6 +1090,7 @@
     </button>
 
 
+    <button id="cancelRenderBtn" type="button" class="secondary-btn" hidden>Cancel export</button>
     <div
         id="renderStatus"
         class="status"
@@ -1245,13 +1248,13 @@
 
 <script src="js/smartcrop.js"></script>
 
-<script src="js/ai.js"></script>
 
-<script src="js/story.js"></script>
+
+
 
 <script src="js/voice.js"></script>
 
-<script src="js/subtitles.js"></script>
+
 
 <!-- Renderer -->
 <script src="js/renderer.js"></script>
@@ -1335,6 +1338,7 @@
                 }
                 if (musicName) musicName.textContent = "🎵 " + file.name + " — ready";
                 if (removeMusic) removeMusic.style.display = "inline-block";
+                document.dispatchEvent(new Event("viral-media-changed"));
             } catch (error) {
                 console.error("Background music read failed", error);
                 if (musicName) musicName.textContent = "❌ Could not read music file. Please choose it again.";
@@ -1388,1280 +1392,10 @@
 })();
 </script>
 
-<!-- =========================================================
-     OUTPUT FORMAT CONTROL
-========================================================= -->
-<script>
-(function(){
-  function byId(id){ return document.getElementById(id); }
-  function syncOutputFormat(){
-    window.ViralProject = window.ViralProject || {};
-    const select = byId("outputAspectRatio");
-    const value = select ? select.value : (window.ViralProject.outputAspectRatio || "9:16");
-    window.ViralProject.outputAspectRatio = value;
-
-    const summary = byId("renderFormatSummary");
-    const help = byId("outputAspectHelp");
-    if(value === "16:9") {
-      if(summary) summary.textContent = "🖥️ YouTube — 16:9 Landscape";
-      if(help) help.textContent = "Landscape format, 1920×1080. Uses a centered crop to fill the frame.";
-    } else {
-      if(summary) summary.textContent = "📱 TikTok / Shorts — 9:16 Vertical";
-      if(help) help.textContent = "Vertical format, 1080×1920. Smart Crop is used when available.";
-    }
-  }
-  function init(){
-    const select=byId("outputAspectRatio");
-    if(!select) return;
-    select.value = window.ViralProject?.outputAspectRatio || "9:16";
-    select.addEventListener("change", syncOutputFormat);
-    syncOutputFormat();
-  }
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
-})();
-</script>
-
-<!-- =========================================================
-     CLEAN LOCAL TEST ENGINE
-========================================================= -->
-
-<script>
-
-(function () {
-
-"use strict";
-
-
-console.log(
-    "🧪 VIRAL LOCAL TEST ENGINE LOADED"
-);
-
-
-
-/* =========================================================
-   TEST STATE
-========================================================= */
-
-const TestState = {
-
-    audioFile: null,
-
-    audioURL: null,
-
-    start: 0,
-
-    end: 30,
-
-    story:
-        "",
-
-    subtitles: [],
-
-    logoBlob: null,
-    logoName: "",
-    logoPosition: "top-right",
-    logoSize: 18,
-    logoOpacity: 0.85,
-
-    audioMode: "narration",
-    narrationVolume: 1,
-    originalVolume: 0.35,
-    defaultCharacterVoice: "narrator"
-
-};
-
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function get(id) {
-
-    return document.getElementById(id);
-
-}
-
-
-/* =========================================================
-   V11 — SCENE FRAME SHARING / EXPORT
-========================================================= */
-
-window.ViralSceneFrames = [];
-
-async function dataUrlToFile(dataUrl, filename) {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: blob.type || "image/jpeg" });
-}
-
-function setupSceneFrameActions() {
-    const shareBtn = get("shareSceneFramesBtn");
-    const openBtn = get("openSceneFramesBtn");
-    const status = get("sceneFramesShareStatus");
-
-    if (!shareBtn || !openBtn) return;
-
-    shareBtn.disabled = !window.ViralSceneFrames.length;
-    openBtn.disabled = !window.ViralSceneFrames.length;
-
-    shareBtn.onclick = async function() {
-        if (!window.ViralSceneFrames.length) return;
-        try {
-            const files = [];
-            for (let i = 0; i < window.ViralSceneFrames.length; i++) {
-                files.push(await dataUrlToFile(
-                    window.ViralSceneFrames[i].image,
-                    "viral-scene-frame-" + (i + 1) + ".jpg"
-                ));
-            }
-
-            if (!navigator.share) {
-                if (status) status.textContent = "⚠️ Sharing is not supported here. Use Open Frames and save the images manually.";
-                return;
-            }
-
-            if (navigator.canShare && !navigator.canShare({ files })) {
-                if (status) status.textContent = "⚠️ This browser cannot share multiple image files.";
-                return;
-            }
-
-            await navigator.share({
-                title: "VIRAL scene frames",
-                text: "Representative frames from my VIRAL scene.",
-                files
-            });
-
-            if (status) status.textContent = "✅ Frames shared.";
-        } catch (error) {
-            if (error && error.name === "AbortError") return;
-            console.error("Frame sharing failed:", error);
-            if (status) status.textContent = "❌ Could not share the frames. Try Open Frames instead.";
-        }
-    };
-
-    openBtn.onclick = function() {
-        if (!window.ViralSceneFrames.length) return;
-        const html = "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>VIRAL Scene Frames</title><style>body{font-family:sans-serif;margin:16px;background:#111;color:#fff}img{display:block;width:100%;max-width:900px;margin:0 auto 18px;border-radius:10px}h2{text-align:center}</style></head><body><h2>VIRAL Scene Frames</h2>" +
-            window.ViralSceneFrames.map((f,i)=>"<p>Frame "+(i+1)+" • "+f.time+"s</p><img src=\""+f.image+"\" alt=\"Scene frame "+(i+1)+"\">").join("") + "</body></html>";
-        const blob = new Blob([html], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-    };
-}
-
-
-function show(id) {
-
-    const el = get(id);
-
-    if (el) {
-
-        el.style.display = "";
-
-    }
-
-}
-
-
-function hide(id) {
-
-    const el = get(id);
-
-    if (el) {
-
-        el.style.display = "none";
-
-    }
-
-}
-
-
-function setStatus(text) {
-
-    const el = get("status");
-
-    if (el) {
-
-        el.textContent = text;
-
-    }
-
-    console.log(
-        "STATUS:",
-        text
-    );
-
-}
-
-
-function setRenderStatus(text) {
-
-    const el =
-        get("renderStatus");
-
-    if (el) {
-
-        el.textContent = text;
-
-    }
-
-    console.log(
-        "RENDER:",
-        text
-    );
-
-}
-
-
-function setProgress(value) {
-
-    const bar =
-        get("renderProgress");
-
-    const text =
-        get("renderProgressText");
-
-    if (bar) {
-
-        bar.value =
-            value;
-
-    }
-
-    if (text) {
-
-        text.textContent =
-            Math.round(value) +
-            "%";
-
-    }
-
-}
-
-
-function formatTime(seconds) {
-
-    seconds =
-        Math.max(
-            0,
-            Number(seconds) || 0
-        );
-
-    const minutes =
-        Math.floor(
-            seconds / 60
-        );
-
-    const secs =
-        Math.floor(
-            seconds % 60
-        );
-
-    return (
-        minutes +
-        ":" +
-        String(secs).padStart(
-            2,
-            "0"
-        )
-    );
-
-}
-
-
-
-/* =========================================================
-   SYNCHRONIZE SCENE WITH ViralVideo
-========================================================= */
-
-function readCurrentScene() {
-
-    if (!window.ViralVideo || !ViralVideo.video) {
-        return null;
-    }
-
-    const start = Number(document.getElementById("startRange")?.value);
-    const end = Number(document.getElementById("endRange")?.value);
-    const videoDuration = Number(ViralVideo.video.duration);
-
-    if (!Number.isFinite(start) || !Number.isFinite(end) ||
-        !Number.isFinite(videoDuration) || videoDuration <= 0) {
-        return null;
-    }
-
-    const safeStart = Math.max(0, Math.min(start, videoDuration));
-    const safeEnd = Math.max(safeStart, Math.min(end, videoDuration));
-
-    TestState.start = safeStart;
-    TestState.end = safeEnd;
-
-    return {
-        start: safeStart,
-        end: safeEnd,
-        duration: safeEnd - safeStart
-    };
-}
-
-
-/* =========================================================
-   TEST ANALYSIS
-========================================================= */
-
-async function activateTestAnalysis() {
-
-    if (!window.ViralVideo || !ViralVideo.videoFile) {
-
-        alert(
-            "First select a video."
-        );
-
-        return;
-
-    }
-
-
-    /*
-    ---------------------------------------------------------
-    Make absolutely sure scene state is current.
-    ---------------------------------------------------------
-    */
-
-    if (!readCurrentScene()) {
-
-        alert(
-            "Please select a valid video scene."
-        );
-
-        return;
-
-    }
-
-
-    const duration =
-        TestState.end -
-        TestState.start;
-
-
-    /*
-    ---------------------------------------------------------
-    EXTRACT AND DISPLAY REPRESENTATIVE SCENE FRAMES
-    These frames are the visual reference for scene analysis.
-    ---------------------------------------------------------
-    */
-
-    let sceneFrames = [];
-
-    try {
-
-        setStatus(
-            "🎞️ Extracting scene frames..."
-        );
-
-        sceneFrames =
-            await ViralVideo.extractFrames();
-
-        window.ViralSceneFrames = sceneFrames.slice();
-        setupSceneFrameActions();
-
-        const gallery =
-            get("sceneFramesGallery");
-
-        const frameStatus =
-            get("sceneFramesStatus");
-
-        if (gallery) {
-
-            gallery.innerHTML = "";
-
-            sceneFrames.forEach(
-                (frame, index) => {
-
-                    const card =
-                        document.createElement("div");
-
-                    card.style.cssText =
-                        "border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff;";
-
-                    const img =
-                        document.createElement("img");
-
-                    img.src = frame.image;
-                    img.alt =
-                        "Scene frame " + (index + 1);
-                    img.style.cssText =
-                        "display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;";
-
-                    const caption =
-                        document.createElement("div");
-
-                    caption.textContent =
-                        "Frame " + (index + 1) +
-                        " • " + frame.time + "s";
-                    caption.style.cssText =
-                        "padding:7px;font-size:12px;text-align:center;";
-
-                    card.appendChild(img);
-                    card.appendChild(caption);
-                    gallery.appendChild(card);
-
-                }
-            );
-
-        }
-
-        if (frameStatus) {
-            frameStatus.textContent =
-                "✅ " + sceneFrames.length +
-                " representative frames from the selected scene.";
-        }
-
-    }
-    catch (frameError) {
-
-        console.error(
-            "❌ Scene frame extraction failed:",
-            frameError
-        );
-
-        const frameStatus =
-            get("sceneFramesStatus");
-
-        if (frameStatus) {
-            frameStatus.textContent =
-                "⚠️ Could not extract scene frames: " +
-                (frameError.message || frameError);
-        }
-
-    }
-
-
-    console.log(
-        "🧪 TEST ANALYSIS SCENE:",
-        TestState.start,
-        "→",
-        TestState.end,
-        "|",
-        duration,
-        "seconds"
-    );
-
-
-    const characters =
-        get("characters");
-
-    const description =
-        get("sceneDescription");
-
-    const interpretation =
-        get("storyInterpretation");
-
-
-    if (characters) {
-        characters.textContent = "";
-    }
-
-
-    if (description) {
-        description.textContent = "";
-    }
-
-
-    if (interpretation) {
-        interpretation.textContent = "";
-    }
-
-
-    const result =
-        get("analysisResult");
-
-    const empty =
-        get("analysisEmpty");
-
-
-    if (result) {
-
-        result.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    if (empty) {
-
-        empty.style.display =
-            "none";
-
-    }
-
-
-    show("storySection");
-
-
-    const defaultVoice = get("defaultCharacterVoice");
-    if (defaultVoice) {
-        defaultVoice.addEventListener("change", function () {
-            TestState.defaultCharacterVoice = this.value;
-            window.ViralProject = window.ViralProject || {};
-            ViralProject.defaultCharacterVoice = this.value;
-            const info = get("characterVoiceInfo");
-            if (info) info.textContent = "✅ Default voice style set to: " + this.options[this.selectedIndex].text;
-        });
-        TestState.defaultCharacterVoice = defaultVoice.value || "narrator";
-    }
-
-    const story =
-        get("amharicStory");
-
-
-    if (story) {
-        story.value = "";
-    }
-
-
-    setStatus(
-        "✅ Scene frames ready. Add the story after reviewing the frames."
-    );
-
-}
-
-
-
-/* =========================================================
-   STORY
-========================================================= */
-
-function approveStory() {
-
-    const textarea =
-        get("amharicStory");
-
-
-    if (!textarea) {
-
-        return;
-
-    }
-
-
-    const text =
-        textarea.value.trim();
-
-
-    if (!text) {
-
-        alert(
-            "Please enter an Amharic story first."
-        );
-
-        return;
-
-    }
-
-
-    TestState.story =
-        text;
-
-    window.ViralProject = window.ViralProject || {};
-    ViralProject.amharicStory = text;
-    ViralProject.storyApproved = true;
-
-
-    const status =
-        get("storyStatus");
-
-
-    if (status) {
-
-        status.textContent =
-            "✅ Story approved for local test.";
-
-    }
-
-
-    show("voiceSection");
-
-
-    setStatus(
-        "✅ Story approved."
-    );
-
-
-    get("voiceSection")
-        ?.scrollIntoView({
-            behavior: "smooth"
-        });
-
-}
-
-
-
-/* =========================================================
-   SELECTED SCENE DURATION
-========================================================= */
-
-function getSceneDuration() {
-
-    const scene = readCurrentScene();
-
-    return Math.max(
-        0,
-        TestState.end -
-        TestState.start
-    );
-
-}
-
-
-
-/* =========================================================
-   TEST SUBTITLES
-========================================================= */
-
-function createTestSubtitles() {
-
-    const text =
-        TestState.story.trim();
-
-
-    if (!text) {
-
-        alert(
-            "No story available."
-        );
-
-        return;
-
-    }
-
-
-    const duration =
-        getSceneDuration();
-
-
-    if (duration <= 0) {
-
-        alert(
-            "Please select a valid scene."
-        );
-
-        return;
-
-    }
-
-
-    const sentences =
-        text
-            .split(/[።.!?]+/)
-            .map(
-                function (item) {
-
-                    return item.trim();
-
-                }
-            )
-            .filter(Boolean);
-
-
-    TestState.subtitles = [];
-
-
-    const count =
-        Math.max(
-            1,
-            sentences.length
-        );
-
-
-    const chunk =
-        duration /
-        count;
-
-
-    sentences.forEach(
-        function (
-            sentence,
-            index
-        ) {
-
-            TestState.subtitles.push({
-
-                text:
-                    sentence,
-
-                start:
-                    index *
-                    chunk,
-
-                end:
-                    (index + 1) *
-                    chunk,
-
-                voiceProfile:
-                    TestState.defaultCharacterVoice ||
-                    window.ViralProject?.defaultCharacterVoice ||
-                    "narrator"
-
-            });
-
-        }
-    );
-
-
-    renderSubtitleList();
-
-
-    const preview =
-        get("subtitlePreview");
-
-
-    if (preview) {
-
-        preview.textContent =
-            sentences.join(" ");
-
-    }
-
-
-    const approve =
-        get("approveSubtitlesBtn");
-
-
-    if (approve) {
-
-        approve.disabled =
-            false;
-
-    }
-
-
-    setStatus(
-        "✅ Subtitles generated. Assign a character voice style to each line, then approve."
-    );
-
-
-    console.log(
-        "📝 SUBTITLES:",
-        TestState.subtitles
-    );
-
-}
-
-
-
-/* =========================================================
-   RENDER SUBTITLE LIST
-========================================================= */
-
-function renderSubtitleList() {
-
-    const list =
-        get("subtitleList");
-
-
-    if (!list) {
-
-        return;
-
-    }
-
-
-    list.innerHTML = "";
-
-
-    TestState.subtitles.forEach(
-        function (subtitle) {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-            div.className =
-                "result-card";
-
-
-            const label =
-                document.createElement(
-                    "label"
-                );
-
-
-            label.textContent =
-                formatTime(
-                    subtitle.start
-                ) +
-                " → " +
-                formatTime(
-                    subtitle.end
-                );
-
-
-            const p =
-                document.createElement(
-                    "p"
-                );
-
-
-            p.textContent =
-                subtitle.text;
-
-
-            div.appendChild(
-                label
-            );
-
-            div.appendChild(
-                p
-            );
-
-            const voiceLabel = document.createElement("label");
-            voiceLabel.textContent = "🎭 Character voice";
-            voiceLabel.style.display = "block";
-            voiceLabel.style.marginTop = "10px";
-
-            const voiceSelect = document.createElement("select");
-            voiceSelect.className = "subtitle-voice";
-            voiceSelect.dataset.index = String(TestState.subtitles.indexOf(subtitle));
-            voiceSelect.style.width = "100%";
-            voiceSelect.innerHTML = `
-                <option value="narrator">🎙️ Narrator — natural</option>
-                <option value="deep">🧔 Deep — low / strong</option>
-                <option value="child">👦 Child — high / playful</option>
-                <option value="high">🐦 High — bright</option>
-                <option value="old">👴 Old — low / gentle</option>
-                <option value="robot">🤖 Robot — electronic</option>
-                <option value="echo">👻 Echo — dramatic</option>
-                <option value="funny">😂 Funny — comic</option>
-                <option value="strong">😠 Strong — powerful</option>
-                <option value="soft">😌 Soft — quiet</option>`;
-            voiceSelect.value = subtitle.voiceProfile || TestState.defaultCharacterVoice || "narrator";
-            voiceSelect.addEventListener("change", function () {
-                subtitle.voiceProfile = this.value;
-                window.ViralProject = window.ViralProject || {};
-                ViralProject.defaultCharacterVoice = TestState.defaultCharacterVoice || "narrator";
-            });
-
-            div.appendChild(voiceLabel);
-            div.appendChild(voiceSelect);
-
-            list.appendChild(
-                div
-            );
-
-        }
-    );
-
-}
-
-
-
-/* =========================================================
-   APPROVE SUBTITLES
-========================================================= */
-
-function approveSubtitles() {
-
-    if (
-        !TestState.subtitles.length
-    ) {
-
-        createTestSubtitles();
-
-    }
-
-
-    if (
-        !TestState.subtitles.length
-    ) {
-
-        return;
-
-    }
-
-
-    const voiceFields = document.querySelectorAll("#subtitleList .subtitle-voice");
-    voiceFields.forEach(function (field) {
-        const index = Number(field.dataset.index);
-        if (TestState.subtitles[index]) {
-            TestState.subtitles[index].voiceProfile = field.value || "narrator";
-        }
-    });
-
-    window.ViralProject = window.ViralProject || {};
-    ViralProject.defaultCharacterVoice = TestState.defaultCharacterVoice || "narrator";
-    ViralProject.subtitles = TestState.subtitles;
-    ViralProject.subtitlesApproved = true;
-
-    const status =
-        get("subtitleStatus");
-
-
-    if (status) {
-
-        status.textContent =
-            "✅ Subtitles approved.";
-
-    }
-
-
-    show("renderSection");
-
-
-    setStatus(
-        "🎬 Everything is ready for rendering."
-    );
-
-
-    get("renderSection")
-        ?.scrollIntoView({
-            behavior: "smooth"
-        });
-
-}
-
-
-
-/* =========================================================
-   FULL LOCAL TEST
-========================================================= */
-
-function startFullTest() {
-
-    console.log(
-        "================================================"
-    );
-
-    console.log(
-        "🚀 FULL LOCAL TEST STARTED"
-    );
-
-    console.log(
-        "================================================"
-    );
-
-
-    if (!window.ViralVideo || !ViralVideo.videoFile) {
-
-        alert(
-            "First select a video."
-        );
-
-        const input =
-            get("hiddenVideoInput");
-
-        input?.click();
-
-        return;
-
-    }
-
-
-    if (!readCurrentScene()) {
-
-        alert(
-            "Please select a valid scene."
-        );
-
-        return;
-
-    }
-
-
-    activateTestAnalysis();
-
-
-    get("storySection")
-        ?.scrollIntoView({
-            behavior: "smooth"
-        });
-
-}
-
-
-
-/* =========================================================
-   CONNECT BUTTONS
-========================================================= */
-
-function setupButtons() {
-
-    const startTest =
-        get("startTestBtn");
-
-
-    if (startTest) {
-
-        startTest.addEventListener(
-            "click",
-            startFullTest
-        );
-
-    }
-
-
-    const narration =
-        get("narrationBtn");
-
-
-    if (narration) {
-
-        narration.addEventListener(
-            "click",
-            function () {
-
-                show(
-                    "storySection"
-                );
-
-
-                const story =
-                    get("amharicStory");
-
-
-                if (story) {
-
-                    story.value =
-                        TestState.story;
-
-                }
-
-
-                get("storySection")
-                    ?.scrollIntoView({
-                        behavior: "smooth"
-                    });
-
-            }
-        );
-
-    }
-
-
-    const approveStoryButton =
-        get("approveStoryBtn");
-
-
-    if (approveStoryButton) {
-
-        approveStoryButton.addEventListener(
-            "click",
-            approveStory
-        );
-
-    }
-
-
-    const subtitleButton =
-        get("generateSubtitlesBtn");
-
-
-    if (subtitleButton) {
-
-        subtitleButton.addEventListener(
-            "click",
-            createTestSubtitles
-        );
-
-    }
-
-
-    const approveSubtitleButton =
-        get("approveSubtitlesBtn");
-
-
-    if (approveSubtitleButton) {
-
-        approveSubtitleButton.addEventListener(
-            "click",
-            approveSubtitles
-        );
-
-    }
-
-
-    const downloadButton =
-        get("downloadFinalVideoBtn");
-
-
-    if (downloadButton) {
-
-        downloadButton.addEventListener(
-            "click",
-            function () {
-
-                /*
-                -----------------------------------------
-                Prefer renderer.js download function.
-                -----------------------------------------
-                */
-
-                if (
-                    window.ViralRenderer &&
-                    ViralRenderer.finalVideoBlob &&
-                    typeof ViralRenderer.downloadFinalVideo ===
-                        "function"
-                ) {
-
-                    ViralRenderer.downloadFinalVideo();
-
-                    return;
-
-                }
-
-
-                /*
-                -----------------------------------------
-                Fallback
-                -----------------------------------------
-                */
-
-                if (
-                    window.ViralRenderer &&
-                    ViralRenderer.finalVideoURL
-                ) {
-
-                    const link =
-                        document.createElement(
-                            "a"
-                        );
-
-                    link.href =
-                        ViralRenderer.finalVideoURL;
-
-                    link.download =
-                        "VIRAL-Amharic-Short.mp4";
-
-                    document.body.appendChild(
-                        link
-                    );
-
-                    link.click();
-
-                    link.remove();
-
-                    return;
-
-                }
-
-
-                alert(
-                    "❌ No rendered video available."
-                );
-
-            }
-        );
-
-    }
-
-}
-
-
-
-/* =========================================================
-   INITIALIZE
-========================================================= */
-
-function initialize() {
-
-    console.log(
-        "================================================"
-    );
-
-    /*
-    ---------------------------------------------------------
-    VIDEO SYSTEM
-
-    video.js is now the single owner of video upload, preview,
-    metadata and scene selection. The old test-engine upload
-    handler has been removed.
-    ---------------------------------------------------------
-    */
-
-    if (window.ViralVideo && typeof ViralVideo.init === "function") {
-        ViralVideo.init();
-    } else {
-        console.error("❌ ViralVideo.init() is not available.");
-    }
-
-    /*
-    ---------------------------------------------------------
-    VOICE SYSTEM
-    voice.js is the single owner of voice upload, recording,
-    AI voice and approval.
-    ---------------------------------------------------------
-    */
-    if (window.ViralVoice && typeof ViralVoice.init === "function") {
-        ViralVoice.init();
-    } else {
-        console.error("❌ ViralVoice.init() is not available.");
-    }
-
-    console.log(
-        "🔥 VIRAL LOCAL TEST SYSTEM INITIALIZING"
-    );
-
-    console.log(
-        "================================================"
-    );
-
-
-    setupButtons();
-
-
-    /*
-    ---------------------------------------------------------
-    Put default test story in editor.
-    ---------------------------------------------------------
-    */
-
-    const story =
-        get("amharicStory");
-
-
-    if (story) {
-        story.value = "";
-    }
-
-
-
-
-    console.log(
-        "✅ VIRAL LOCAL TEST SYSTEM READY"
-    );
-
-}
-
-
-
-/* =========================================================
-   START
-========================================================= */
-
-if (
-    document.readyState ===
-    "loading"
-) {
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        initialize
-    );
-
-} else {
-
-    initialize();
-
-}
-
-
-})();
-
-</script>
-
+<!-- Caption editor and persistent drafts -->
+
+<script src="js/captions.js"></script>
+<script src="js/drafts.js"></script>
+<script src="js/editor.js"></script>
 </body>
-
 </html>
