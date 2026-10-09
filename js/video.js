@@ -255,7 +255,7 @@ window.ViralVideo = {
                 */
 
                 const url =
-                    URL.createObjectURL(file);
+                    URL.createObjectURL(this.videoFile);
 
                 this.videoUrl = url;
 
@@ -532,10 +532,7 @@ this.video.load();
         this.startRange.value = 0;
 
 this.endRange.value =
-    Math.min(
-        30,
-        duration
-    );
+    (document.getElementById("editorMode")?.value === "subtitles" ? duration : Math.min(30, duration));
 
 
 /*
@@ -548,10 +545,7 @@ this.selectedStart =
     0;
 
 this.selectedEnd =
-    Math.min(
-        30,
-        duration
-    );
+    (document.getElementById("editorMode")?.value === "subtitles" ? duration : Math.min(30, duration));
 
 this.selectedDuration =
     this.selectedEnd -

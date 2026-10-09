@@ -571,3 +571,42 @@ input[type="range"] {
 .audio-slider-row input[type="range"] {
     width: 100%;
 }
+
+/* Caption editing and persistent project controls. */
+.editor-home { grid-column: 1 / -1; }
+.draft-controls, .caption-times { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 16px 0; }
+.draft-controls label { width: 100%; }
+.draft-controls input, .draft-controls select { flex: 1; min-width: 180px; }
+.caption-times label { flex: 1; min-width: 140px; }
+.caption-times input { display: block; width: 100%; margin: 6px 0; }
+.caption-card textarea { width: 100%; margin: 12px 0; }
+.caption-card button, .caption-actions button { margin: 4px; }
+.video-wrap { position: relative; }
+#captionOverlay { position: absolute; bottom: 10%; left: 6%; width: 88%; text-align: center; color: white; font-weight: 700; line-height: 1.25; white-space: pre-wrap; text-shadow: 0 1px 3px #000, 0 -1px 3px #000; pointer-events: none; }
+#captionOverlay[data-position="top"] { top: 10%; bottom: auto; }
+#captionOverlay[data-position="middle"] { top: 50%; bottom: auto; transform: translateY(-50%); }
+#captionOverlay[data-style="bold"], #captionOverlay[data-style="story"] { background: #000b; border-radius: 8px; padding: 8px; }
+input[type="number"], #draftName { padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--text); }
+[hidden] { display: none !important; }
+@media (max-width: 600px) { .draft-controls > button { flex: 1; } #captionOverlay { max-height: 60%; overflow: hidden; } }
+.studio textarea, .studio select, .studio input[type="url"] { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); color: var(--text); font: inherit; font-size: 16px; }
+.studio textarea { resize: vertical; }
+#draftSelect { width: auto; }
+@font-face { font-family: "Noto Sans Ethiopic"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/noto-sans-ethiopic-ethiopic-400-normal.woff2") format("woff2"); unicode-range: U+1200-139F,U+2D80-2DDF,U+AB00-AB2F; }
+@font-face { font-family: "Noto Sans Ethiopic"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/noto-sans-ethiopic-ethiopic-700-normal.woff2") format("woff2"); unicode-range: U+1200-139F,U+2D80-2DDF,U+AB00-AB2F; }
+body, .studio textarea, .studio input { font-family: system-ui, "Noto Sans Ethiopic", sans-serif; }
+#captionOverlay { font-family: "Noto Sans Ethiopic", system-ui, sans-serif; }
+
+
+/* Keep the same video element visible when its original position scrolls away. */
+#previewShell.is-floating { position: fixed; top: var(--preview-top, 76px); right: max(12px, env(safe-area-inset-right)); width: var(--floating-width, 320px); z-index: 30; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 32px #0009; overflow: hidden; }
+.floating-preview-controls { display: none; }
+.is-floating .floating-preview-controls { display: block; padding: 6px 8px; }
+.floating-preview-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: space-between; }
+.floating-preview-row button { padding: 6px 8px; font-size: 12px; }
+#floatingClock { font-size: 12px; font-variant-numeric: tabular-nums; }
+#floatingSeek { display: block; margin: 4px 0 0; }
+.floating-preview-option { display: flex; gap: 8px; align-items: center; font-size: 13px; margin-top: 10px; }
+.caption-card, .caption-card input, .caption-card textarea, .caption-card button { scroll-margin-top: var(--floating-preview-bottom, 80px); }
+
+.compact-floating .floating-preview-row button:last-child { display: none; }

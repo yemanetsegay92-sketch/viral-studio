@@ -1048,6 +1048,12 @@ window.ViralVoice = {
     */
 
     enableApproval: function () {
+        this.approved = false;
+        if (window.ViralProject) {
+            ViralProject.voiceApproved = false;
+            ViralProject.voiceBlob = this.currentAudioBlob;
+        }
+        document.dispatchEvent(new Event("viral-media-changed"));
 
         const button =
             document.getElementById(
@@ -1057,11 +1063,9 @@ window.ViralVoice = {
 
         if (button) {
 
-            button.disabled =
-                false;
-
+            button.disabled = false;
+            button.textContent = "✅ Approve Voice";
         }
-
     },
 
 

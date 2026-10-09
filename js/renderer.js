@@ -42,6 +42,9 @@ IMPORTANT
 window.ViralRenderer = {
 
     initialized: false,
+    rendering: false,
+    cancelled: false,
+    renderSettings: null,
 
     ffmpeg: null,
 
@@ -216,7 +219,47 @@ window.ViralRenderer = {
     ========================================================
     */
 
+    getOutputDimensions: function () {
+        const project = this.renderSettings || window.ViralProject || {};
+        const height = project.exportQuality === "high" ? 1080 : 720;
+        if (project.outputAspectRatio === "16:9") return {width: height * 16 / 9, height};
+        if (project.outputAspectRatio !== "source") return {width:height, height:height * 16 / 9};
+        const video = window.ViralVideo?.video;
+        const width = video?.videoWidth || 1280, sourceHeight = video?.videoHeight || 720;
+        const scale = Math.min(1, height / Math.min(width, sourceHeight));
+        return {width:Math.max(2, Math.floor(width * scale / 2) * 2), height:Math.max(2, Math.floor(sourceHeight * scale / 2) * 2)};
+    },
+
+    cancel: function () {
+        if (!this.rendering) return;
+        this.cancelled = true;
+        if (this.ffmpeg) this.ffmpeg.terminate();
+        this.ffmpegLoaded = false;
+        this.setStatus("Export cancelled. Your project is still available.");
+    },
+
+    checkCancelled: function () {
+        if (this.cancelled) throw new Error("Export cancelled. Your project is still available.");
+    },
+
     render: async function () {
+        if (this.rendering) return;
+        this.rendering = true;
+        this.cancelled = false;
+        const cancelButton = document.getElementById("cancelRenderBtn");
+        if (cancelButton) cancelButton.hidden = false;
+        // Snapshot all settings so edits while exporting cannot change the command halfway through.
+        this.renderSettings = {...window.ViralProject};
+        this.renderSettings.subtitles = (window.ViralProject?.subtitles || []).map(c => ({...c}));
+        if (this.finalVideoUrl) URL.revokeObjectURL(this.finalVideoUrl);
+        this.finalVideoUrl = null;
+        this.finalVideoBlob = null;
+        document.getElementById("finalVideoWrap").style.display = "none";
+        document.querySelectorAll("main input, main select, main textarea, main button").forEach(el => {
+            if (el.id === "cancelRenderBtn") return;
+            el.dataset.exportDisabled = el.disabled ? "1" : "0";
+            el.disabled = true;
+        });
 
         console.log(
             "================================================"
@@ -323,7 +366,7 @@ window.ViralRenderer = {
             */
 
             const project =
-                window.ViralProject;
+                this.renderSettings;
 
 
             if (!project) {
@@ -341,7 +384,8 @@ window.ViralRenderer = {
             ==================================================
             */
 
-            const audioMode = project.audioMode || "narration";
+            const subtitlesOnly = project.editorMode === "subtitles";
+            const audioMode = subtitlesOnly ? "original" : (project.audioMode || "narration");
 
             const needsNarration =
                 audioMode === "narration" ||
@@ -394,6 +438,10 @@ window.ViralRenderer = {
             }
 
 
+            if (window.ViralCaptions) {
+                const error = ViralCaptions.validate(project.subtitles, selection.duration);
+                if (error) throw new Error(error);
+            }
             console.log(
                 "📝 SUBTITLE COUNT:",
                 project.subtitles.length
@@ -445,6 +493,7 @@ window.ViralRenderer = {
             */
 
             await this.loadFFmpeg();
+            this.checkCancelled();
 
 
             /*
@@ -575,6 +624,13 @@ window.ViralRenderer = {
             }
 
 
+            // Mixed audio needs an explicit stream check. Subtitles-only uses optional mapping.
+            let hasOriginalAudio = true;
+            if (!subtitlesOnly && (audioMode === "original" || audioMode === "original_narration")) {
+                hasOriginalAudio = (await this.ffmpeg.exec(["-i", videoInputName, "-map", "0:a:0", "-t", "0.01", "-f", "null", "-"])) === 0;
+                this.checkCancelled();
+            }
+
             /*
             ==================================================
             12. WRITE OPTIONAL BACKGROUND MUSIC
@@ -583,7 +639,7 @@ window.ViralRenderer = {
 
             let musicInputName = null;
 
-            if (project.backgroundMusicBlob) {
+            if (!subtitlesOnly && project.backgroundMusicBlob) {
                 this.setProgress(26, "🎵 Loading background music...");
 
                 const musicExtension = this.getAudioExtension(project.backgroundMusicBlob);
@@ -643,6 +699,9 @@ window.ViralRenderer = {
             );
 
 
+            if (document.fonts?.load) await document.fonts.load('700 48px "Noto Sans Ethiopic"', "ሰላም");
+            if (document.fonts?.ready) await document.fonts.ready;
+            this.checkCancelled();
             const subtitleFiles =
                 await this.createSubtitleImages(
                     project.subtitles,
@@ -686,7 +745,7 @@ window.ViralRenderer = {
             );
 
             let smartCrop = null;
-            const outputAspectRatio = project.outputAspectRatio === "16:9" ? "16:9" : "9:16";
+            const outputAspectRatio = project.outputAspectRatio || "source";
 
             try {
 
@@ -732,6 +791,8 @@ window.ViralRenderer = {
                 );
 
             filterData.musicInputName = musicInputName;
+            filterData.hasOriginalAudio = hasOriginalAudio;
+            this.checkCancelled();
 
 
             /*
@@ -1019,7 +1080,10 @@ console.log(
 
 
         catch (error) {
-
+            if (this.cancelled) {
+                this.setProgress(0, "Export cancelled. Your project is still available.");
+                return;
+            }
             console.error(
                 "================================================"
             );
@@ -1037,10 +1101,7 @@ console.log(
             );
 
 
-            this.setProgress(
-                0,
-                "❌ Final rendering failed."
-            );
+            this.setProgress(0, this.cancelled ? "Export cancelled." : "❌ Final rendering failed.");
 
 
             this.setStatus(
@@ -1057,24 +1118,16 @@ console.log(
 
 
         finally {
-
-            const renderButton =
-                document.getElementById(
-                    "renderVideoBtn"
-                );
-
-
-            if (renderButton) {
-
-                renderButton.disabled =
-                    false;
-
-                renderButton.textContent =
-                    renderButton.dataset.originalText ||
-                    "🎬 Render Final Video";
-
-            }
-
+            if (!this.cancelled) await this.cleanupFFmpegFiles();
+            document.querySelectorAll("[data-export-disabled]").forEach(el => {
+                el.disabled = el.dataset.exportDisabled === "1";
+                delete el.dataset.exportDisabled;
+            });
+            const renderButton = document.getElementById("renderVideoBtn");
+            if (renderButton) renderButton.textContent = renderButton.dataset.originalText || "🎬 Render Final Video";
+            if (cancelButton) cancelButton.hidden = true;
+            this.renderSettings = null;
+            this.rendering = false;
         }
 
     },
@@ -1399,8 +1452,8 @@ loadFFmpeg: async function () {
             "🧱 Creating FFmpeg instance..."
         );
 
-        this.ffmpeg =
-            new window.FFmpegWASM.FFmpeg();
+        this.checkCancelled();
+        this.ffmpeg = new window.FFmpegWASM.FFmpeg();
 
         console.log(
             "✅ FFmpeg instance created."
@@ -1496,60 +1549,6 @@ loadFFmpeg: async function () {
             "🔎 Checking ffmpeg-core.js..."
         );
 
-        const coreResponse =
-            await fetch(
-                coreURL
-            );
-
-        if (
-            !coreResponse.ok
-        ) {
-
-            throw new Error(
-                "Could not load ffmpeg-core.js. HTTP " +
-                coreResponse.status
-            );
-
-        }
-
-        console.log(
-            "✅ ffmpeg-core.js reachable."
-        );
-
-        console.log(
-            "🔎 Checking ffmpeg-core.wasm.gz..."
-        );
-
-        const wasmResponse =
-            await fetch(
-                wasmURL
-            );
-
-        if (
-            !wasmResponse.ok
-        ) {
-
-            throw new Error(
-                "Could not load ffmpeg-core.wasm.gz. HTTP " +
-                wasmResponse.status
-            );
-
-        }
-
-        console.log(
-            "✅ ffmpeg-core.wasm.gz reachable."
-        );
-
-        /*
-        ====================================================
-        LOAD
-        ====================================================
-        */
-
-        console.log(
-            "🔥 Calling ffmpeg.load()..."
-        );
-
         await this.ffmpeg.load({
 
             coreURL:
@@ -1566,8 +1565,8 @@ loadFFmpeg: async function () {
         ====================================================
         */
 
-        this.ffmpegLoaded =
-            true;
+        if (this.cancelled) { this.ffmpeg.terminate(); this.checkCancelled(); }
+        this.ffmpegLoaded = true;
 
         console.log(
             "========================================"
@@ -1712,18 +1711,12 @@ loadFFmpeg: async function () {
         try { await this.ffmpeg.deleteFile("viral-logo.jpg"); } catch {}
         try { await this.ffmpeg.deleteFile("viral-logo.webp"); } catch {}
 
-        for (
-            let i = 0;
-            i < 100;
-            i++
-        ) {
+        for (const filename of (this.subtitleImageNames || [])) {
 
             try {
 
                 await this.ffmpeg.deleteFile(
-                    "subtitle-" +
-                    i +
-                    ".png"
+                    filename
                 );
 
             }
@@ -1731,6 +1724,7 @@ loadFFmpeg: async function () {
 
         }
 
+        this.subtitleImageNames = [];
     },
 
 
@@ -1911,9 +1905,9 @@ loadFFmpeg: async function () {
                 );
 
 
-            const renderAspect = window.ViralProject?.outputAspectRatio === "16:9" ? "16:9" : "9:16";
-            const canvasWidth = renderAspect === "16:9" ? 1920 : 1080;
-            const canvasHeight = renderAspect === "16:9" ? 1080 : 1920;
+            this.checkCancelled();
+            const {width:canvasWidth, height:canvasHeight} = this.getOutputDimensions();
+            const renderAspect = canvasWidth > canvasHeight ? "16:9" : "9:16";
 
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
@@ -1976,9 +1970,9 @@ loadFFmpeg: async function () {
                 );
 
 
-            const fontScale = renderAspect === "16:9" ? 3.8 : 2.5;
+            const fontScale = (renderAspect === "16:9" ? 3.8 : 2.5) * Math.min(canvasWidth,canvasHeight) / 1080;
             const fontSize =
-                Math.max(48, size * fontScale);
+                Math.max(24, size * fontScale);
 
 
             /*
@@ -2177,6 +2171,7 @@ loadFFmpeg: async function () {
                 ".png";
 
 
+            (this.subtitleImageNames ||= []).push(filename);
             await this.ffmpeg.writeFile(
                 filename,
                 await this.fetchFile(
@@ -2461,9 +2456,15 @@ loadFFmpeg: async function () {
 
     buildCharacterVoiceFilter: function (subtitles, duration, masterVolume) {
 
-        const items = Array.isArray(subtitles) && subtitles.length
-            ? subtitles
-            : [{ start: 0, end: duration, voiceProfile: "narrator" }];
+        const items = [];
+        let cursor = 0;
+        for (const cue of (subtitles || [])) {
+            if (cue.start > cursor) items.push({start:cursor, end:cue.start, voiceProfile:"narrator"});
+            items.push(cue);
+            cursor = cue.end;
+        }
+        if (cursor < duration) items.push({start:cursor, end:duration, voiceProfile:"narrator"});
+        if (!items.length) items.push({start:0,end:duration,voiceProfile:"narrator"});
 
         const graphs = [];
         const labels = [];
@@ -2488,23 +2489,23 @@ loadFFmpeg: async function () {
             const pitch = p.pitch;
             const restoreTempo = (1 / pitch).toFixed(5);
             const label = "[cv" + index + "]";
-            let chain = "[1:a]atrim=start=" + this.escapeFilterNumber(start) + ":end=" + this.escapeFilterNumber(end) + ",asetpts=PTS-STARTPTS";
+            let chain = "[1:a]aresample=44100,atrim=start=" + this.escapeFilterNumber(start) + ":end=" + this.escapeFilterNumber(end) + ",asetpts=PTS-STARTPTS";
 
             if (Math.abs(pitch - 1) > 0.001) {
                 chain += ",asetrate=44100*" + pitch.toFixed(4) + ",aresample=44100,atempo=" + restoreTempo;
             }
 
             if (p.extra) chain += "," + p.extra;
-            chain += ",volume=" + p.volume.toFixed(3) + label + ";";
+            chain += ",apad,atrim=duration=" + this.escapeFilterNumber(end-start) + ",volume=" + p.volume.toFixed(3) + label + ";";
             graphs.push(chain);
             labels.push(label);
         });
 
         let out = ";" + graphs.join("");
         if (labels.length === 1) {
-            out += labels[0] + "volume=" + Math.max(0, Number(masterVolume) || 1).toFixed(3) + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
+            out += labels[0] + "volume=" + Math.max(0, Number(masterVolume ?? 1)).toFixed(3) + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
         } else {
-            out += labels.join("") + "concat=n=" + labels.length + ":v=0:a=1,volume=" + Math.max(0, Number(masterVolume) || 1).toFixed(3) + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
+            out += labels.join("") + "concat=n=" + labels.length + ":v=0:a=1,volume=" + Math.max(0, Number(masterVolume ?? 1)).toFixed(3) + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[aout]";
         }
 
         return out;
@@ -2532,12 +2533,12 @@ loadFFmpeg: async function () {
 
             smartCrop: smartCrop,
             logoInputName: logoInputName,
-            outputAspectRatio: outputAspectRatio === "16:9" ? "16:9" : "9:16",
-
-            audioMode: window.ViralProject?.audioMode || "narration",
-            narrationVolume: Number(window.ViralProject?.narrationVolume) || 1,
-            originalVolume: Number(window.ViralProject?.originalVolume) || 0.35,
-            backgroundMusicVolume: Number(window.ViralProject?.backgroundMusicVolume) || 0.20,
+            outputAspectRatio,
+            subtitlesOnly: this.renderSettings?.editorMode === "subtitles",
+            audioMode: this.renderSettings?.editorMode === "subtitles" ? "original" : (this.renderSettings?.audioMode || "narration"),
+            narrationVolume: Number(this.renderSettings?.narrationVolume ?? window.ViralProject?.narrationVolume ?? 1),
+            originalVolume: Number(this.renderSettings?.originalVolume ?? window.ViralProject?.originalVolume ?? 0.35),
+            backgroundMusicVolume: Number(this.renderSettings?.backgroundMusicVolume ?? window.ViralProject?.backgroundMusicVolume ?? 0.20),
             musicInputName: null
 
         };
@@ -2563,10 +2564,10 @@ loadFFmpeg: async function () {
 
     const audioMode = filterData?.audioMode || "narration";
     const needsNarration = audioMode === "narration" || audioMode === "original_narration";
-    const narrationVolume = Math.max(0, Number(filterData?.narrationVolume) || 1);
-    const originalVolume = Math.max(0, Number(filterData?.originalVolume) || 0.35);
+    const narrationVolume = Math.max(0, Number(filterData?.narrationVolume ?? 1));
+    const originalVolume = Math.max(0, Number(filterData?.originalVolume ?? 0.35));
     const musicInputName = filterData?.musicInputName || null;
-    const musicVolume = Math.max(0, Number(filterData?.backgroundMusicVolume) || 0.20);
+    const musicVolume = Math.max(0, Number(filterData?.backgroundMusicVolume ?? 0.20));
 
     /*
     ========================================================
@@ -2670,7 +2671,11 @@ loadFFmpeg: async function () {
 
     let filter;
 
-    const renderAspect = filterData?.outputAspectRatio === "16:9" ? "16:9" : "9:16";
+    const renderAspect = filterData?.outputAspectRatio || "source";
+    const {width:outputWidth, height:outputHeight} = this.getOutputDimensions();
+    const crop = filterData?.smartCrop;
+    const sourceWidth = window.ViralVideo?.video?.videoWidth || 0;
+    const sourceHeight = window.ViralVideo?.video?.videoHeight || 0;
 
     /*
     --------------------------------------------------------
@@ -2681,13 +2686,15 @@ loadFFmpeg: async function () {
     --------------------------------------------------------
     */
 
-    if (renderAspect === "16:9") {
+    if (renderAspect === "source") {
+        filter = "[0:v]setpts=PTS-STARTPTS,scale=" + outputWidth + ":" + outputHeight + ",setsar=1[base];";
+    } else if (renderAspect === "16:9") {
 
         filter =
             "[0:v]" +
-            "scale=1920:1080:" +
+            "setpts=PTS-STARTPTS,scale=" + outputWidth + ":" + outputHeight + ":" +
             "force_original_aspect_ratio=increase," +
-            "crop=1920:1080," +
+            "crop=" + outputWidth + ":" + outputHeight + "," +
             "setsar=1" +
             "[base];";
 
@@ -2716,8 +2723,8 @@ loadFFmpeg: async function () {
 
         filter =
             "[0:v]" +
-            "crop=" + w + ":" + h + ":" + x + ":" + y + "," +
-            "scale=1080:1920," +
+            "setpts=PTS-STARTPTS,crop=" + w + ":" + h + ":" + x + ":" + y + "," +
+            "scale=" + outputWidth + ":" + outputHeight + "," +
             "setsar=1" +
             "[base];";
 
@@ -2730,9 +2737,9 @@ loadFFmpeg: async function () {
 
         filter =
             "[0:v]" +
-            "scale=1080:1920:" +
+            "setpts=PTS-STARTPTS,scale=" + outputWidth + ":" + outputHeight + ":" +
             "force_original_aspect_ratio=increase," +
-            "crop=1080:1920," +
+            "crop=" + outputWidth + ":" + outputHeight + "," +
             "setsar=1" +
             "[base];";
 
@@ -2758,7 +2765,7 @@ loadFFmpeg: async function () {
         const position = window.ViralProject?.logoPosition || "top-right";
         const sizePct = Math.max(8, Math.min(35, Number(window.ViralProject?.logoSize) || 18));
         const opacity = Math.max(0.2, Math.min(1, Number(window.ViralProject?.logoOpacity) || 0.85));
-        const logoWidth = Math.round(1080 * sizePct / 100);
+        const logoWidth = Math.round(outputWidth * sizePct / 100);
         let x = "W-w-36";
         let y = "36";
         if (position === "top-left") { x = "36"; y = "36"; }
@@ -2825,15 +2832,11 @@ loadFFmpeg: async function () {
                 last +
                 subtitleLabel +
                 "overlay=0:0:" +
-                "enable='between(t," +
+                "enable='gte(t," +
                 this.escapeFilterNumber(
                     file.start
                 ) +
-                "," +
-                this.escapeFilterNumber(
-                    file.end
-                ) +
-                ")'" +
+                ")*lt(t," + this.escapeFilterNumber(file.end) + ")'" +
                 outputLabel +
                 ";";
 
@@ -2877,7 +2880,7 @@ loadFFmpeg: async function () {
         audioLabels.push("[narration]");
     }
 
-    if (audioMode === "original" || audioMode === "original_narration") {
+    if (!filterData?.subtitlesOnly && filterData?.hasOriginalAudio !== false && (audioMode === "original" || audioMode === "original_narration")) {
         filter += ";[0:a]volume=" + originalVolume + ",aresample=async=1,apad,atrim=duration=" + this.escapeFilterNumber(duration) + "[orig]";
         audioLabels.push("[orig]");
     }
@@ -2915,7 +2918,11 @@ loadFFmpeg: async function () {
 
     args.push("-map", "[vout]");
 
-    args.push("-map", "[aout]");
+    if (filterData?.subtitlesOnly) {
+        args.push("-map", "0:a?");
+    } else if (audioLabels.length) {
+        args.push("-map", "[aout]");
+    }
 
 
     /*
@@ -2929,10 +2936,10 @@ loadFFmpeg: async function () {
         "libx264",
 
         "-preset",
-        "veryfast",
+        (this.renderSettings || window.ViralProject)?.exportQuality === "high" ? "veryfast" : "ultrafast",
 
         "-crf",
-        "23",
+        (this.renderSettings || window.ViralProject)?.exportQuality === "high" ? "23" : "28",
 
         "-pix_fmt",
         "yuv420p"
