@@ -175,3 +175,13 @@ vertical/landscape output and mixed narration with timeline gaps. Exported MP4s
 were inspected with ffprobe. A bundled OFL Ethiopic font supports caption graphics
 without requiring a system font. Serve the project with the gzip headers
 from `vercel.json` when testing FFmpeg in a browser.
+
+
+### Floating timing preview
+
+The source video automatically floats below the header when its original location
+scrolls off screen. The same video element continues playing, with captions,
+play/pause, a scene-relative clock, and a precise seek slider visible beside the
+caption editor. Use **Use playhead** to capture start/end times. **Back to video**
+returns to its original position, and the checkbox disables floating if preferred.
+The player adapts to portrait video, small screens and the on-screen keyboard.

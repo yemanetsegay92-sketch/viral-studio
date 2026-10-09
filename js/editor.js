@@ -224,8 +224,97 @@ window.ViralEditor = (() => {
         } catch (error) { byId("draftStatus").textContent = "Could not open draft: " + error.message; }
         finally { restoring = false; }
     }
+    function setupFloatingPreview() {
+        const video = byId("videoPreview"), wrap = video.parentElement;
+        const anchor = document.createElement("div"); anchor.id = "previewAnchor";
+        const shell = document.createElement("div"); shell.id = "previewShell";
+        wrap.before(anchor); anchor.append(shell); shell.append(wrap);
+        const controls = document.createElement("div"); controls.className = "floating-preview-controls";
+        const row = document.createElement("div"); row.className = "floating-preview-row";
+        const play = document.createElement("button"); play.type = "button"; play.className = "small-btn";
+        play.textContent = "▶ Play"; play.id = "floatingPlayBtn";
+        const clock = document.createElement("output"); clock.id = "floatingClock"; clock.textContent = "0.00 / 0.00 s";
+        clock.setAttribute("aria-label", "Selected scene playhead time");
+        const back = document.createElement("button"); back.type = "button"; back.className = "small-btn"; back.textContent = "Back to video";
+        const seek = document.createElement("input"); seek.type = "range"; seek.min = "0"; seek.max = "0"; seek.step = "0.01"; seek.value = "0"; seek.id = "floatingSeek";
+        seek.setAttribute("aria-label", "Seek within selected scene");
+        row.append(play, clock, back); controls.append(row, seek); shell.append(controls);
+        const label = document.createElement("label"); label.className = "floating-preview-option";
+        const enabled = document.createElement("input"); enabled.type = "checkbox"; enabled.checked = true; enabled.id = "floatPreviewEnabled";
+        label.append(enabled, " Keep video visible while editing captions"); anchor.after(label);
+        let frame = 0, floating = false;
+        function layout() {
+            frame = 0;
+            const headerBottom = document.querySelector(".topbar").getBoundingClientRect().bottom;
+            const top = Math.max(8, headerBottom + 8);
+            const shouldFloat = enabled.checked && !!ViralVideo.videoFile && anchor.getBoundingClientRect().bottom < top;
+            if (shouldFloat && !floating) anchor.style.height = `${shell.getBoundingClientRect().height}px`;
+            shell.classList.toggle("is-floating", shouldFloat);
+            if (!shouldFloat) anchor.style.height = "";
+            floating = shouldFloat;
+            if (floating) {
+                const viewport = window.visualViewport;
+                const viewportWidth = viewport?.width || window.innerWidth;
+                const viewportHeight = viewport?.height || window.innerHeight;
+                shell.classList.toggle("compact-floating", viewportHeight < 500);
+                const ratio = video.videoWidth / video.videoHeight || 16 / 9;
+                const videoHeight = Math.max(60, Math.min(220, viewportHeight * 0.28, viewportHeight - top - 110));
+                const width = Math.max(80, Math.min(420, viewportWidth - 24, videoHeight * ratio));
+                shell.style.setProperty("--floating-width", `${width}px`);
+                shell.style.setProperty("--preview-top", `${top}px`);
+                document.documentElement.style.setProperty("--floating-preview-bottom", `${top + width / ratio + controls.offsetHeight + 12}px`);
+                // Floating changes the preview scale; refresh caption size without changing media.
+                preview();
+                const active = document.activeElement;
+                if (viewportHeight < 500 && active?.closest(".caption-card")) {
+                    const rect = active.getBoundingClientRect(), limit = shell.getBoundingClientRect().bottom + 8;
+                    if (rect.top < limit) window.scrollBy(0, rect.top - limit);
+                    else if (rect.bottom > viewportHeight - 8) window.scrollBy(0, rect.bottom - viewportHeight + 8);
+                }
+            } else document.documentElement.style.setProperty("--floating-preview-bottom", "80px");
+        }
+        function scheduleLayout() { if (!frame) frame = requestAnimationFrame(layout); }
+        function syncControls() {
+            const scene = selection(), time = Math.max(0, Math.min(scene.duration, video.currentTime - scene.start));
+            seek.max = scene.duration || 0; seek.value = time;
+            play.textContent = video.paused ? "▶ Play" : "⏸ Pause";
+            clock.textContent = `${time.toFixed(2)} / ${scene.duration.toFixed(2)} s`;
+        }
+        play.addEventListener("click", () => {
+            if (!video.paused) video.pause();
+            else {
+                const scene = selection(), time = video.currentTime - scene.start;
+                playScene(time >= scene.duration ? 0 : Math.max(0, time));
+            }
+        });
+        seek.addEventListener("input", () => {
+            const scene = selection();
+            video.currentTime = scene.start + Math.min(scene.duration, Number(seek.value));
+            preview(); syncControls();
+        });
+        back.addEventListener("click", () => anchor.scrollIntoView({behavior:"smooth", block:"center"}));
+        enabled.addEventListener("change", scheduleLayout);
+        for (const event of ["timeupdate", "play", "pause", "seeked", "loadedmetadata"]) video.addEventListener(event, syncControls);
+        video.addEventListener("loadedmetadata", scheduleLayout);
+        ["startRange", "endRange"].forEach(id => byId(id).addEventListener("input", syncControls));
+        window.addEventListener("scroll", scheduleLayout, {passive:true});
+        window.addEventListener("resize", scheduleLayout);
+        window.visualViewport?.addEventListener("resize", scheduleLayout);
+        // Resize also occurs when a restored draft changes video orientation.
+        new ResizeObserver(scheduleLayout).observe(wrap);
+        document.addEventListener("focusin", event => {
+            if (!floating || !event.target.closest(".caption-card")) return;
+            const card = event.target.closest(".caption-card");
+            const height = window.visualViewport?.height || window.innerHeight;
+            const rect = (window.innerWidth <= 600 && height >= 500 ? card : event.target).getBoundingClientRect();
+            const bottom = shell.getBoundingClientRect().bottom;
+            if (rect.top < bottom + 12) window.scrollBy({top:rect.top - bottom - 12, behavior:"smooth"});
+        });
+        syncControls(); layout();
+    }
     function init() {
         ViralVideo.init();
+        setupFloatingPreview();
         const video = byId("videoPreview");
         video.addEventListener("loadedmetadata", () => {
             if (restoring) return;
