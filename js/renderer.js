@@ -427,21 +427,10 @@ window.ViralRenderer = {
             }
 
 
-            if (
-                !project.subtitlesApproved
-            ) {
-
-                throw new Error(
-                    "Please approve the subtitles first."
-                );
-
-            }
-
-
-            if (window.ViralCaptions) {
-                const error = ViralCaptions.validate(project.subtitles, selection.duration);
-                if (error) throw new Error(error);
-            }
+            // Render is the confirmation action: always validate the latest edited times.
+            if (!window.ViralCaptions) throw new Error("Caption timing validator is unavailable. Refresh the page and retry.");
+            const timingError = ViralCaptions.validate(project.subtitles, selection.duration);
+            if (timingError) throw new Error(timingError);
             console.log(
                 "📝 SUBTITLE COUNT:",
                 project.subtitles.length

@@ -14,7 +14,8 @@ window.ViralEditor = (() => {
         project().subtitlesApproved = false;
         byId("approveSubtitlesBtn").disabled = !cues.length;
         byId("approveSubtitlesBtn").textContent = "✅ Approve Subtitles";
-        byId("renderVideoBtn").disabled = true;
+        byId("renderVideoBtn").disabled = !!window.ViralRenderer?.rendering;
+        byId("renderStatus").textContent = "Render checks your latest captions and timing before exporting.";
     }
     function changed() {
         if (restoring) return;
@@ -216,7 +217,7 @@ window.ViralEditor = (() => {
             applyMode();
             const valid = !ViralCaptions.validate(cues, selection().duration);
             project().subtitlesApproved = draft.subtitlesApproved && valid;
-            byId("renderVideoBtn").disabled = !project().subtitlesApproved;
+            byId("renderVideoBtn").disabled = false;
             byId("finalVideoWrap").style.display = "none";
             revision = savedRevision = 0;
             byId("draftStatus").textContent = "Draft reopened with media and timing restored.";

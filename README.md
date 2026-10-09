@@ -185,3 +185,13 @@ play/pause, a scene-relative clock, and a precise seek slider visible beside the
 caption editor. Use **Use playhead** to capture start/end times. **Back to video**
 returns to its original position, and the checkbox disables floating if preferred.
 The player adapts to portrait video, small screens and the on-screen keyboard.
+
+### Export after timing edits
+
+Render Final Video stays available after editing captions or reopening a draft.
+Render validates the latest text and timing directly; separate subtitle approval
+is optional. Invalid timing is reported beside the Render button before FFmpeg
+loads, and controls remain available so the caption can be corrected.
+
+Verified on a phone-sized browser with a silent MP4: invalid timing reports an
+error, corrected captions export without reapproval, and the MP4 downloads.
